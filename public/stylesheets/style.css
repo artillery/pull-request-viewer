@@ -2,4 +2,10 @@
 .navbar img {
   height: 32px;
   vertical-align: middle;
+  border-radius: 3px;
+}
+tr.pullrequest img {
+  height: 24px;
+  vertical-align: middle;
+  border-radius: 3px;
 }

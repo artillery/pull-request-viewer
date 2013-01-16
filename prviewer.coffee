@@ -11,6 +11,7 @@
 
 GitHubAPI = require 'github'
 GitHubStrategy = require('passport-github').Strategy
+async = require 'async'
 express = require 'express'
 fs = require 'fs'
 http = require 'http'
@@ -28,6 +29,10 @@ argv = optimist
 
 settings = JSON.parse fs.readFileSync argv._[0]
 
+# -------------------------------------------------------------------------
+# GITHUB OAUTH INITIALIZATION
+# -------------------------------------------------------------------------
+
 passport.use new GitHubStrategy({
   clientID: settings.github.clientID
   clientSecret: settings.github.clientSecret
@@ -39,6 +44,10 @@ passport.use new GitHubStrategy({
 
 passport.serializeUser (user, done) -> done null, user
 passport.deserializeUser (user, done) -> done null, user
+
+# -------------------------------------------------------------------------
+# EXPRESS INITIALIZATION
+# -------------------------------------------------------------------------
 
 app = express()
 
@@ -61,6 +70,10 @@ app.configure ->
 app.configure 'development', ->
   app.use express.errorHandler()
 
+# -------------------------------------------------------------------------
+# AUTHENTICATION HANDLERS
+# -------------------------------------------------------------------------
+
 app.get '/auth/github', passport.authenticate 'github', scope: 'repo'
 
 app.get '/auth/github/callback',
@@ -68,34 +81,49 @@ app.get '/auth/github/callback',
   (req, res) ->
     res.redirect '/'
 
+app.get '/logout', (req, res) ->
+  req.logout()
+  res.redirect '/'
+
 ensureAuthenticated = (req, res, next) ->
   if req.isAuthenticated()
     return next()
   else
     res.redirect '/auth/github'
 
-app.get '/', ensureAuthenticated, (req, res) ->
+# -------------------------------------------------------------------------
+# DASHBOARD
+# -------------------------------------------------------------------------
 
+app.get '/', ensureAuthenticated, (req, res) ->
   github = new GitHubAPI(version: '3.0.0')
   github.authenticate type: 'oauth', token: req.user.accessToken
 
-  github.pullRequests.getAll {
-    user: settings.github.user
-    repo: settings.github.repo
-  }, (err, data) ->
-    if err
-      result = JSON.stringify err
-    else
-      result = JSON.stringify data
-    result = JSON.stringify req.user.profile
-    res.render 'index',
-      settings: settings
-      user: req.user.profile
-      data: result
+  username = req.user.profile.username
 
-app.get '/logout', (req, res) ->
-  req.logout()
-  res.redirect '/'
+  async.waterfall [
+
+    (cb) ->
+      github.pullRequests.getAll {
+        user: settings.github.user
+        repo: settings.github.repo
+      }, cb
+
+    (pulls, cb) ->
+      cb null, pulls
+
+  ], (err, pulls) ->
+    if err
+      res.send 500, "Error: #{ err }"
+    else
+      res.render 'index',
+        settings: settings
+        profile: req.user.profile
+        pulls: pulls
+
+# -------------------------------------------------------------------------
+# SERVER STARTUP
+# -------------------------------------------------------------------------
 
 http.createServer(app).listen argv.port, argv.host, ->
   console.log "Pull Request Viewer listening on port http://#{ argv.host }:#{ argv.port }"
