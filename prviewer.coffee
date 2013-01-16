@@ -15,6 +15,7 @@ async = require 'async'
 express = require 'express'
 fs = require 'fs'
 http = require 'http'
+moment = require 'moment'
 optimist = require 'optimist'
 passport = require 'passport'
 path = require 'path'
@@ -97,6 +98,7 @@ ensureAuthenticated = (req, res, next) ->
 
 app.get '/', ensureAuthenticated, (req, res) ->
   github = new GitHubAPI(version: '3.0.0')
+  github.debug = true
   github.authenticate type: 'oauth', token: req.user.accessToken
 
   username = req.user.profile.username
@@ -110,7 +112,65 @@ app.get '/', ensureAuthenticated, (req, res) ->
       }, cb
 
     (pulls, cb) ->
-      cb null, pulls
+      iterator = (pull, pullCb) ->
+        github.pullRequests.getComments {
+          user: settings.github.user
+          repo: settings.github.repo
+          number: pull.number
+        }, (err, comments) ->
+          return pullCb err if err
+
+          # Record number of comments.
+          pull.num_comments = comments.length
+
+          # Show relative time for last update.
+          pull.last_update = moment(pull.updated_at).fromNow()
+
+          # Convert title to assignees.
+          pull.assignees = []
+          if match = pull.title.match /^([\w\/]+): /
+            pull.title = pull.title.substr match[0].length
+            names = (n.toLowerCase() for n in match[1].split /\//)
+
+            # Convert "IAN/MARK" to ['statico', 'mlogan']
+            for name in names
+              if name of settings.assignees
+                pull.assignees.push settings.assignees[name]
+              else
+                pull.assignees.push name
+
+            # Special case for Work In Progresses.
+            if 'wip' in names
+              pull.class = 'ignore'
+              pull.assignees = []
+
+          # Check for my username in assignees.
+          if username in pull.assignees
+            pull.class = 'warning'
+
+          # Check for my username in any comments.
+          if username in (c.user.login for c in comments)
+            pull.class = 'warning'
+
+          # Check for GLHF in last few comments.
+          bodies = (c.body for c in comments.slice -10).join '\n'
+          if /GLHF/.test bodies
+            pull.statusClass = 'success'
+            pull.status = 'GLHF'
+          else if /PTAL/.test bodies
+            pull.statusClass = 'info'
+            pull.status = 'PTAL'
+          else if /comment[sz]|nits/.test bodies
+            pull.statusClass = 'warning'
+            pull.status = 'Comments'
+          else
+            pull.statusClass = 'default'
+            pull.status = 'Awaiting review'
+
+          pullCb()
+
+      async.forEach pulls, iterator, (err) ->
+        cb err, pulls
 
   ], (err, pulls) ->
     if err
