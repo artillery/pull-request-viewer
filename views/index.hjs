@@ -1,12 +1,13 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>PRV - {{ user }}/{{ repo }}</title>
+<title>PRV - {{ settings.github.username }}/{{ settings.github.repo }}</title>
 <link rel='stylesheet' href='/stylesheets/style.css' />
 </head>
 <body>
 <div class="container">
-  <h1>Pull Request Viewer - {{ user }}/{{ repo }}</h1>
+  <h1>Pull Request Viewer - {{ settings.github.username }}/{{ settings.github.repo }}</h1>
+  {{ user }}
 </div>
 </body>
 </html>
