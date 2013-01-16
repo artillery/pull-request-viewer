@@ -156,12 +156,13 @@ app.get '/', ensureAuthenticated, (req, res) ->
             pull.class = 'warning'
 
           # Check for GLHF in last few comments.
-          bodies = (c.body for c in comments.slice -10).join '\n'
-          for config in settings.statuses
-            if new RegExp(config.regex).test bodies
-              pull.statusClass = config.class
-              pull.status = config.title
-              break
+          if comments.length
+            body = comments[comments.length - 1].body
+            for config in settings.statuses
+              if new RegExp(config.regex).test body
+                pull.statusClass = config.class
+                pull.status = config.title
+                break
           if not pull.status
             if comments.length
               pull.statusClass = 'default'
