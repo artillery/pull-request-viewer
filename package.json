@@ -27,7 +27,9 @@
     "hjs": "*",
     "stylus": "*",
     "passport-github": "*",
-    "async": "*"
+    "async": "*",
+    "moment": "*",
+    "optimist": "*"
   },
   "license": "MIT",
   "engines": {
