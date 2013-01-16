@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>{{ title }}</title>
-    <link rel='stylesheet' href='/stylesheets/style.css' />
-  </head>
-  <body>
-    <h1>{{ title }}</h1>
-    <p>Welcome to {{ title }}</p>
-  </body>
+<head>
+<title>PRV - {{ user }}/{{ repo }}</title>
+<link rel='stylesheet' href='/stylesheets/style.css' />
+</head>
+<body>
+<div class="container">
+  <h1>Pull Request Viewer - {{ user }}/{{ repo }}</h1>
+</div>
+</body>
 </html>

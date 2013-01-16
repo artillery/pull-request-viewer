@@ -1,7 +1,1 @@
-body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
-}
-a {
-  color: #00b7ff;
-}
+@import url("../bootstrap-2.2.2/css/bootstrap.css");
