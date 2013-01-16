@@ -159,7 +159,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
           if comments.length
             body = comments[comments.length - 1].body
             for config in settings.statuses
-              if new RegExp(config.regex).test body
+              if new RegExp(config.regex, 'i').test body
                 pull.statusClass = config.class
                 pull.status = config.title
                 break
