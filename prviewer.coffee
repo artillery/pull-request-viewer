@@ -1,13 +1,12 @@
 #!/usr/bin/env coffee
 #
-# Copyright 2012 Artillery Games, Inc. All rights reserved.
-#
-# This code, and all derivative work, is the exclusive property of Artillery
-# Games, Inc. and may not be used without Artillery Games, Inc.'s authorization#
+# Copyright 2012 Artillery Games, Inc.
+# Licensed under the MIT license.
 #
 # Author: Ian Langworth
 #
-# Inspired strongly by https://github.com/jaredhanson/passport-github/blob/master/examples/login/app.js
+# Inspired strongly by
+# https://github.com/jaredhanson/passport-github/blob/master/examples/login/app.js
 
 GitHubAPI = require 'github'
 GitHubStrategy = require('passport-github').Strategy
