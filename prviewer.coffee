@@ -111,12 +111,29 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
     (pulls, cb) ->
       iterator = (pull, pullCb) ->
-        github.pullRequests.getComments {
-          user: settings.github.user
-          repo: settings.github.repo
-          number: pull.number
-        }, (err, comments) ->
+
+        async.parallel [
+
+          (cb2) ->
+            github.pullRequests.getComments {
+              user: settings.github.user
+              repo: settings.github.repo
+              number: pull.number
+            }, cb2
+
+          (cb2) ->
+            github.issues.getComments {
+              user: settings.github.user
+              repo: settings.github.repo
+              number: pull.number
+            }, cb2
+
+        ], (err, results) ->
           return pullCb err if err
+
+          # Combine issue comments and pull comments, then sort.
+          comments = results[0].concat results[1]
+          comments.sort (a, b) -> if a.updated_at < b.updated_at then -1 else 1
 
           # Record number of comments.
           pull.num_comments = comments.length
