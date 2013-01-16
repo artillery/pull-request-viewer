@@ -36,7 +36,7 @@ settings = JSON.parse fs.readFileSync argv._[0]
 passport.use new GitHubStrategy({
   clientID: settings.github.clientID
   clientSecret: settings.github.clientSecret
-  callbackURL: "http://#{ argv.host }:#{ argv.port }/auth/github/callback"
+  callbackURL: settings.github.callbackURL
 }, (accessToken, refreshToken, profile, done) ->
   process.nextTick ->
     return done null, { profile: profile, accessToken: accessToken }

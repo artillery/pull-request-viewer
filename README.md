@@ -30,7 +30,8 @@ This application provides an alternative interface to viewing pull requests on G
         "user": "artillery",
         "repo": "superstuff",
         "clientID": "<see Applications in GitHub settings>",
-        "clientSecret": "<see Applications in GitHub settings>"
+        "clientSecret": "<see Applications in GitHub settings>",
+        "callbackURL": "<see Applications in GitHub settings>"
       },
       "statuses": [
         { "title": "Looks good!", "class": "success", "regex": "LGTM" },
