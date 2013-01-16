@@ -1,6 +1,6 @@
 #!/usr/bin/env coffee
 #
-# Copyright 2012 Artillery Games, Inc.
+# Copyright 2013 Artillery Games, Inc.
 # Licensed under the MIT license.
 #
 # Author: Ian Langworth
