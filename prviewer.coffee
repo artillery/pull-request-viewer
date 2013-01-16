@@ -179,6 +179,23 @@ app.get '/', ensureAuthenticated, (req, res) ->
       async.forEach pulls, iterator, (err) ->
         cb err, pulls
 
+    # Sort the pulls based on update time.
+    # TODO: Doesn't quite work...
+    (pulls, cb) ->
+      pulls.sort (a, b) ->
+        if a.class == b.class
+          if moment(a.updated_at).unix() > moment(b.updated_at).unix()
+            return -1
+          else
+            return 1
+        else
+          if a.class == 'warning'
+            return -1
+          else
+            return 1
+
+      cb null, pulls
+
   ], (err, pulls) ->
     if err
       res.send 500, "Error: #{ err }"
