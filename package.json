@@ -1,0 +1,32 @@
+{
+  "name": "pull-request-viewer",
+  "version": "0.0.1",
+  "author": "Ian Langworth <ian@artillery.com>",
+  "description": "a better way to view our pull request workflow",
+  "contributors": [],
+  "bin": {
+    "prserver": "./bin/prserver"
+  },
+  "scripts": {
+    "start": "./bin/http-server",
+    "start-dev": "nodemon ./bin/http-server"
+  },
+  "main": "./lib/server",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/artillery/pull-request-server.git"
+  },
+  "keywords": [
+    "github",
+    "productivity",
+    "team",
+    "server",
+    "git"
+  ],
+  "dependencies": {
+  },
+  "license": "TODO",
+  "engines": {
+    "node": ">=0.8"
+  }
+}
