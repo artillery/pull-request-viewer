@@ -1,4 +1,5 @@
 @import url("../bootstrap-2.2.2/css/bootstrap.css");
+@import url("../bootstrap-2.2.2/css/bootstrap-responsive.css");
 .navbar img {
   height: 32px;
   vertical-align: middle;
@@ -8,4 +9,7 @@ tr.pullrequest img {
   height: 24px;
   vertical-align: middle;
   border-radius: 3px;
+}
+tr.pullrequest.ignore {
+  opacity: 0.5;
 }

@@ -98,7 +98,6 @@ ensureAuthenticated = (req, res, next) ->
 
 app.get '/', ensureAuthenticated, (req, res) ->
   github = new GitHubAPI(version: '3.0.0')
-  github.debug = true
   github.authenticate type: 'oauth', token: req.user.accessToken
 
   username = req.user.profile.username
@@ -126,26 +125,31 @@ app.get '/', ensureAuthenticated, (req, res) ->
           # Show relative time for last update.
           pull.last_update = moment(pull.updated_at).fromNow()
 
-          # Convert title to assignees.
-          pull.assignees = []
+          # Pull names from comments.
+          reviewers = {}
+
+          # Convert title to reviewers.
           if match = pull.title.match /^([\w\/]+): /
             pull.title = pull.title.substr match[0].length
             names = (n.toLowerCase() for n in match[1].split /\//)
 
             # Convert "IAN/MARK" to ['statico', 'mlogan']
             for name in names
-              if name of settings.assignees
-                pull.assignees.push settings.assignees[name]
+              if name of settings.reviewers
+                reviewers[settings.reviewers[name]] = true
               else
-                pull.assignees.push name
+                reviewers[name] = true
 
             # Special case for Work In Progresses.
-            if 'wip' in names
+            if 'wip' of reviewers
               pull.class = 'ignore'
-              pull.assignees = []
+              reviewers = {}
 
-          # Check for my username in assignees.
-          if username in pull.assignees
+          # Add reviewers list to pull object.
+          pull.reviewers = (k for k, v of reviewers)
+
+          # Check for my username in reviewers.
+          if username of reviewers
             pull.class = 'warning'
 
           # Check for my username in any comments.
@@ -163,9 +167,12 @@ app.get '/', ensureAuthenticated, (req, res) ->
           else if /comment[sz]|nits/.test bodies
             pull.statusClass = 'warning'
             pull.status = 'Comments'
-          else
+          else if comments.length
             pull.statusClass = 'default'
-            pull.status = 'Awaiting review'
+            pull.status = 'Discussing'
+          else
+            pull.statusClass = 'info'
+            pull.status = 'New'
 
           pullCb()
 
