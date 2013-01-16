@@ -157,21 +157,18 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
           # Check for GLHF in last few comments.
           bodies = (c.body for c in comments.slice -10).join '\n'
-          if /GLHF/.test bodies
-            pull.statusClass = 'success'
-            pull.status = 'GLHF'
-          else if /PTAL/.test bodies
-            pull.statusClass = 'info'
-            pull.status = 'PTAL'
-          else if /comment[sz]|nits/.test bodies
-            pull.statusClass = 'warning'
-            pull.status = 'Comments'
-          else if comments.length
-            pull.statusClass = 'default'
-            pull.status = 'Discussing'
-          else
-            pull.statusClass = 'info'
-            pull.status = 'New'
+          for config in settings.statuses
+            if new RegExp(config.regex).test bodies
+              pull.statusClass = config.class
+              pull.status = config.title
+              break
+          if not pull.status
+            if comments.length
+              pull.statusClass = 'default'
+              pull.status = 'Discussing'
+            else
+              pull.statusClass = 'info'
+              pull.status = 'New'
 
           pullCb()
 
