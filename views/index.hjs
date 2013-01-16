@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>PRV - {{ settings.github.username }}/{{ settings.github.repo }}</title>
+  <title>PRV - {{ settings.github.user }}/{{ settings.github.repo }}</title>
   <link rel='stylesheet' href='/stylesheets/style.css' />
 </head>
 <body>
@@ -11,7 +11,7 @@
     <div class="container">
       <a class="brand" href="/">
         Pull Request Viewer -
-        {{ settings.github.username }}/{{ settings.github.repo }}
+        {{ settings.github.user }}/{{ settings.github.repo }}
       </a>
       <ul class="nav pull-right">
         <li>
@@ -24,6 +24,9 @@
 </div>
 
 <div class="container">
+
+  {{ data }}
+
 </div>
 
 </body>

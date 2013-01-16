@@ -26,7 +26,8 @@
     "express": "3.0.6",
     "hjs": "*",
     "stylus": "*",
-    "passport-github": "*"
+    "passport-github": "*",
+    "async": "*"
   },
   "license": "TODO",
   "engines": {

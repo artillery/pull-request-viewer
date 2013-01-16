@@ -9,15 +9,15 @@
 #
 # Inspired strongly by https://github.com/jaredhanson/passport-github/blob/master/examples/login/app.js
 
-express = require 'express'
-stylus = require 'stylus'
-path = require 'path'
-http = require 'http'
-passport = require 'passport'
-optimist = require 'optimist'
-fs = require 'fs'
-
+GitHubAPI = require 'github'
 GitHubStrategy = require('passport-github').Strategy
+express = require 'express'
+fs = require 'fs'
+http = require 'http'
+optimist = require 'optimist'
+passport = require 'passport'
+path = require 'path'
+stylus = require 'stylus'
 
 argv = optimist
   .usage('Usage: $0 settings.json')
@@ -34,13 +34,11 @@ passport.use new GitHubStrategy({
   callbackURL: "http://#{ argv.host }:#{ argv.port }/auth/github/callback"
 }, (accessToken, refreshToken, profile, done) ->
   process.nextTick ->
-    return done null, profile
+    return done null, { profile: profile, accessToken: accessToken }
 )
 
-passport.serializeUser (user, done) ->
-  done null, user
-passport.deserializeUser (user, done) ->
-  done null, user
+passport.serializeUser (user, done) -> done null, user
+passport.deserializeUser (user, done) -> done null, user
 
 app = express()
 
@@ -63,7 +61,7 @@ app.configure ->
 app.configure 'development', ->
   app.use express.errorHandler()
 
-app.get '/auth/github', passport.authenticate 'github'
+app.get '/auth/github', passport.authenticate 'github', scope: 'repo'
 
 app.get '/auth/github/callback',
   passport.authenticate('github', failureRedirect: '/error'),
@@ -77,9 +75,23 @@ ensureAuthenticated = (req, res, next) ->
     res.redirect '/auth/github'
 
 app.get '/', ensureAuthenticated, (req, res) ->
-  res.render 'index',
-    settings: settings
-    user: req.user
+
+  github = new GitHubAPI(version: '3.0.0')
+  github.authenticate type: 'oauth', token: req.user.accessToken
+
+  github.pullRequests.getAll {
+    user: settings.github.user
+    repo: settings.github.repo
+  }, (err, data) ->
+    if err
+      result = JSON.stringify err
+    else
+      result = JSON.stringify data
+    result = JSON.stringify req.user.profile
+    res.render 'index',
+      settings: settings
+      user: req.user.profile
+      data: result
 
 app.get '/logout', (req, res) ->
   req.logout()
