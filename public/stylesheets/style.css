@@ -1,9 +1,18 @@
 @import url("../bootstrap-2.2.2/css/bootstrap.css");
 @import url("../bootstrap-2.2.2/css/bootstrap-responsive.css");
+body {
+  padding-top: 60px;
+}
 .navbar img {
-  height: 32px;
+  height: 24px;
   vertical-align: middle;
   border-radius: 3px;
+}
+.navbar-inverse {
+  color: #999;
+}
+.navbar .profile {
+  padding: 7px 0;
 }
 tr.pullrequest img {
   height: 24px;
