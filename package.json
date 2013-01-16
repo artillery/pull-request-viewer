@@ -29,7 +29,8 @@
     "passport-github": "*",
     "async": "*",
     "moment": "*",
-    "optimist": "*"
+    "optimist": "*",
+    "github": "*"
   },
   "license": "MIT",
   "engines": {
