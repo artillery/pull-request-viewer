@@ -79,7 +79,7 @@ ensureAuthenticated = (req, res, next) ->
 app.get '/', ensureAuthenticated, (req, res) ->
   res.render 'index',
     settings: settings
-    user: JSON.stringify req.user
+    user: req.user
 
 app.get '/logout', (req, res) ->
   req.logout()

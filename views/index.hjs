@@ -1,13 +1,30 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>PRV - {{ settings.github.username }}/{{ settings.github.repo }}</title>
-<link rel='stylesheet' href='/stylesheets/style.css' />
+  <title>PRV - {{ settings.github.username }}/{{ settings.github.repo }}</title>
+  <link rel='stylesheet' href='/stylesheets/style.css' />
 </head>
 <body>
-<div class="container">
-  <h1>Pull Request Viewer - {{ settings.github.username }}/{{ settings.github.repo }}</h1>
-  {{ user }}
+
+<div class="navbar navbar-inverse">
+  <div class="navbar-inner">
+    <div class="container">
+      <a class="brand" href="/">
+        Pull Request Viewer -
+        {{ settings.github.username }}/{{ settings.github.repo }}
+      </a>
+      <ul class="nav pull-right">
+        <li>
+          <img src="{{ user._json.avatar_url }}"/>
+          {{ user.displayName }}
+        </li>
+      </ul>
+    </div>
+  </div>
 </div>
+
+<div class="container">
+</div>
+
 </body>
 </html>
