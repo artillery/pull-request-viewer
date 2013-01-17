@@ -161,8 +161,11 @@ app.get '/', ensureAuthenticated, (req, res) ->
               pull.class = 'ignore'
               reviewers = {}
 
-          # Add reviewers list to pull object.
-          pull.reviewers = (k for k, v of reviewers)
+          # Is this pull a proposal?
+          if 'proposal' of reviewers
+            pull.class = 'info'
+            pull.title = "PROPOSAL: #{ pull.title }"
+            delete reviewers.proposal
 
           # Check for my username in reviewers.
           if username of reviewers
@@ -188,6 +191,9 @@ app.get '/', ensureAuthenticated, (req, res) ->
               pull.statusClass = 'info'
               pull.status = 'New'
 
+          # Add reviewers list to pull object.
+          pull.reviewers = (k for k, v of reviewers)
+
           pullCb()
 
       async.forEach pulls, iterator, (err) ->
@@ -197,7 +203,9 @@ app.get '/', ensureAuthenticated, (req, res) ->
     # TODO: Doesn't quite work...
     (pulls, cb) ->
       pulls.sort (a, b) ->
-        if a.class == b.class
+        if a.class == 'info'
+          return -1
+        else if a.class == b.class
           if moment(a.updated_at).unix() > moment(b.updated_at).unix()
             return -1
           else
