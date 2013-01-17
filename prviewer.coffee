@@ -156,10 +156,11 @@ app.get '/', ensureAuthenticated, (req, res) ->
               else
                 reviewers[name] = true
 
-            # Special case for Work In Progresses.
-            if 'wip' of reviewers
-              pull.class = 'ignore'
-              reviewers = {}
+          # Is this pull a Work In Progress?
+          if 'wip' of reviewers
+            pull.class = 'ignore'
+            pull.title = "WIP: #{ pull.title }"
+            delete reviewers.wip
 
           # Is this pull a proposal?
           if 'proposal' of reviewers
@@ -202,9 +203,10 @@ app.get '/', ensureAuthenticated, (req, res) ->
     # Sort the pulls based on update time.
     # TODO: Doesn't quite work...
     (pulls, cb) ->
+
       pulls.sort (a, b) ->
         if a.class == 'info'
-          return -1
+          return -1 # Always at top.
         else if a.class == b.class
           if moment(a.updated_at).unix() > moment(b.updated_at).unix()
             return -1
@@ -215,6 +217,12 @@ app.get '/', ensureAuthenticated, (req, res) ->
             return -1
           else
             return 1
+
+      pulls.sort (a, b) ->
+        if a.class == 'ignore'
+          return 1 # Always at bottom.
+        else
+          return -1
 
       cb null, pulls
 
