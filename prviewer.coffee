@@ -168,8 +168,8 @@ app.get '/', ensureAuthenticated, (req, res) ->
             pull.title = "PROPOSAL: #{ pull.title }"
             delete reviewers.proposal
 
-          # Check for my username in reviewers.
-          if username of reviewers
+          # Check for my username in submitter or reviewers.
+          if username == pull.user.login or username of reviewers
             pull.class = 'warning'
 
           # Check for my username in any comments.
