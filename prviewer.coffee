@@ -201,28 +201,19 @@ app.get '/', ensureAuthenticated, (req, res) ->
         cb err, pulls
 
     # Sort the pulls based on update time.
-    # TODO: Doesn't quite work...
     (pulls, cb) ->
-
       pulls.sort (a, b) ->
-        if a.class == 'info'
-          return -1 # Always at top.
-        else if a.class == b.class
-          if moment(a.updated_at).unix() > moment(b.updated_at).unix()
-            return -1
-          else
-            return 1
-        else
-          if a.class == 'warning'
-            return -1
-          else
-            return 1
-
-      pulls.sort (a, b) ->
-        if a.class == 'ignore'
-          return 1 # Always at bottom.
-        else
+        aTime = moment(a.updated_at).unix()
+        bTime = moment(b.updated_at).unix()
+        if a.class == 'info' and b.class != 'info'
+          # Always at top.
           return -1
+        else if a.class == 'ignore' and b.class != 'ignore'
+          # Always at bottom.
+          return 1
+        else
+          # Otherwise just sort by time.
+          return if aTime > bTime then -1 else 1
 
       cb null, pulls
 
