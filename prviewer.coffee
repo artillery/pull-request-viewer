@@ -141,6 +141,10 @@ app.get '/', ensureAuthenticated, (req, res) ->
           # Show relative time for last update.
           pull.last_update = moment(pull.updated_at).fromNow()
 
+          # Show name of last commenter.
+          if comments.length
+            pull.last_commenter = comments[comments.length - 1].user?.login
+
           # Pull names from comments.
           reviewers = {}
 

@@ -52,7 +52,10 @@
       </td>
       <td>{{num_comments}}</td>
       <td><span class="label label-{{statusClass}}">{{status}}</span></td>
-      <td>{{last_update}}</td>
+      <td class="nowrap">
+        {{last_update}}
+        {{#last_commenter}} <br/> by {{last_commenter}} {{/last_commenter}}
+      </td>
       <td><code>{{head.ref}}</code></td>
     </tr>
     {{/pulls}}
