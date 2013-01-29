@@ -13,6 +13,7 @@ This application provides an alternative interface to viewing pull requests on G
 * Lists everyone involved in commenting in a PR
 * Shows and sorts by last update time
 * Shows the source branch name
+* Shows CI build status
 
 ## Getting started
 
@@ -33,7 +34,12 @@ This application provides an alternative interface to viewing pull requests on G
         "clientSecret": "<see Applications in GitHub settings>",
         "callbackURL": "<see Applications in GitHub settings>"
       },
-      "statuses": [
+      "buildStatuses": [
+	    { "title": "Success", "class": "success", "regex": "success" },
+	    { "title": "Pending", "class": "warning", "regex": "pending" },
+	    { "title": "Failed", "class": "important", "regex": "fail" }
+	  ],
+      "reviewStatuses": [
         { "title": "Looks good!", "class": "success", "regex": "LGTM" },
         { "title": "Please take another look", "class": "info", "regex": "PTAL" },
         { "title": "Comments", "class": "warning", "regex": "comments" }

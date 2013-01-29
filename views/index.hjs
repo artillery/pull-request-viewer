@@ -35,10 +35,11 @@
       <th>Title</th>
       <th>Submitter</th>
       <th>Reviewers</th>
-      <th>Status</th>
+      <th>Review Status</th>
       <th>Comments</th>
       <th>Last Update</th>
       <th>Branch</th>
+      <th>Build Status</th>
     </tr>
     </thead>
 
@@ -53,13 +54,14 @@
       <td>
         {{reviewers}}
       </td>
-      <td><span class="label label-{{statusClass}}">{{status}}</span></td>
+      <td><span class="label label-{{reviewStatusClass}}">{{reviewStatus}}</span></td>
       <td>{{num_comments}}</td>
       <td class="nowrap">
         {{last_update}}
         {{#last_commenter}} <br/> by {{last_commenter}} {{/last_commenter}}
       </td>
       <td><code>{{head.ref}}</code></td>
+      <td><span class="label label-{{buildStatusClass}}">{{buildStatus}}</span></td>
     </tr>
     {{/pulls}}
     </tbody>

@@ -115,6 +115,13 @@ app.get '/', ensureAuthenticated, (req, res) ->
         async.parallel [
 
           (cb2) ->
+            github.statuses.get {
+              user: settings.github.user
+              repo: settings.github.repo
+              sha: pull.head.sha
+            }, cb2
+
+          (cb2) ->
             github.pullRequests.getComments {
               user: settings.github.user
               repo: settings.github.repo
@@ -131,8 +138,21 @@ app.get '/', ensureAuthenticated, (req, res) ->
         ], (err, results) ->
           return pullCb err if err
 
+          # Grab build status codes (if they exist).
+          statuses = results[0]
+          if statuses.length > 0
+            status = statuses[0].state
+            for config in settings.buildStatuses
+              if new RegExp(config.regex, 'i').test status
+                pull.buildStatusClass = config.class
+                pull.buildStatus = config.title
+                break
+          if not pull.buildStatus
+            pull.buildStatusClass = 'ignore'
+            pull.buildStatus = 'none'
+
           # Combine issue comments and pull comments, then sort.
-          comments = results[0].concat results[1]
+          comments = results[1].concat results[2]
           comments.sort (a, b) -> if a.updated_at < b.updated_at then -1 else 1
 
           # Record number of comments.
@@ -183,18 +203,18 @@ app.get '/', ensureAuthenticated, (req, res) ->
           # Check for GLHF in last few comments.
           if comments.length
             body = comments[comments.length - 1].body
-            for config in settings.statuses
+            for config in settings.reviewStatuses
               if new RegExp(config.regex, 'i').test body
-                pull.statusClass = config.class
-                pull.status = config.title
+                pull.reviewStatusClass = config.class
+                pull.reviewStatus = config.title
                 break
-          if not pull.status
+          if not pull.reviewStatus
             if comments.length
-              pull.statusClass = 'default'
-              pull.status = 'Discussing'
+              pull.reviewStatusClass = 'default'
+              pull.reviewStatus = 'Discussing'
             else
-              pull.statusClass = 'info'
-              pull.status = 'New'
+              pull.reviewStatusClass = 'info'
+              pull.reviewStatus = 'New'
 
           # Add reviewers list to pull object.
           pull.reviewers = (k for k, v of reviewers)
