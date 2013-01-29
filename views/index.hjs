@@ -1,5 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
+
+<script type="text/javascript">setTimeout(function(){location.reload()}, 60*1000)</script>
+
 <head>
   <meta charset="utf-8"/>
   <title>PRV - {{settings.github.user}}/{{settings.github.repo}}</title>
