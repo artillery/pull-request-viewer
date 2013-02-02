@@ -149,7 +149,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
                 break
           if not pull.buildStatus
             pull.buildStatusClass = 'ignore'
-            pull.buildStatus = 'none'
+            pull.buildStatus = 'n/a'
 
           # Combine issue comments and pull comments, then sort.
           comments = results[1].concat results[2]
