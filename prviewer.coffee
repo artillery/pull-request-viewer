@@ -180,12 +180,6 @@ app.get '/', ensureAuthenticated, (req, res) ->
               else
                 reviewers[name] = true
 
-          # Is this pull a Work In Progress?
-          if 'wip' of reviewers
-            pull.class = 'ignore'
-            pull.title = "WIP: #{ pull.title }"
-            delete reviewers.wip
-
           # Is this pull a proposal?
           if 'proposal' of reviewers
             pull.class = 'info'
@@ -199,6 +193,12 @@ app.get '/', ensureAuthenticated, (req, res) ->
           # Check for my username in any comments.
           if username in (c.user.login for c in comments)
             pull.class = 'warning'
+
+          # Is this pull a Work In Progress?
+          if 'wip' of reviewers
+            pull.class = 'ignore'
+            pull.title = "WIP: #{ pull.title }"
+            delete reviewers.wip
 
           # Check for GLHF in last few comments.
           if comments.length
