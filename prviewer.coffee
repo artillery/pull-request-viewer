@@ -30,7 +30,7 @@ argv = optimist
 settings = JSON.parse fs.readFileSync argv._[0]
 
 # Map of GitHub username -> Gravatar URL.
-# The URL might be null for names like 'WIP' and 'ALL'
+# The URL can be null for incorrect github usernames
 usernameToAvatar = {}
 
 # -------------------------------------------------------------------------
@@ -172,14 +172,20 @@ app.get '/', ensureAuthenticated, (req, res) ->
           # Pull names from comments.
           reviewers = {}
 
-          # Convert title to reviewers.
+          # Extract reviewers from pull title.
           if match = pull.title.match /^([\w\/]+): /
+            # Strip the names out of the title.
             pull.title = pull.title.substr match[0].length
+
+            # Convert title to reviewers.
             names = (n.toLowerCase() for n in match[1].split /\//)
 
             # Convert "IAN/MARK" to ['statico', 'mlogan']
             for name in names
-              if name of settings.reviewers
+              if name in ['everyone', 'all']
+                # Add all reviewers.
+                reviewers[name] = true for _, name of settings.reviewers
+              else if name of settings.reviewers
                 reviewers[settings.reviewers[name]] = true
               else
                 reviewers[name] = true
@@ -240,7 +246,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
       # Make sure we have avatars for everybody.
       iterator = (username, cb2) ->
-        if username in ['wip', 'all'] or username of usernameToAvatar
+        if username of usernameToAvatar
           return cb2()
 
         github.user.getFrom {

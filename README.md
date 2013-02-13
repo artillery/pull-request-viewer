@@ -10,6 +10,7 @@ This application provides an alternative interface to viewing pull requests on G
 * Highlights PRs involving you
 * Parses the last comment of a PR to set a status label
 * If PR titles begin with reviewer names `foo:` or `foo/bar/baz:`, the names will be converted to GitHub usernames per the settings file
+* If PR titles begin with `everyone` or `all`, all reviewers will be added
 * Lists everyone involved in commenting in a PR
 * Shows and sorts by last update time
 * Shows the source branch name
