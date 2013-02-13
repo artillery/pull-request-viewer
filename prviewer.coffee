@@ -29,6 +29,10 @@ argv = optimist
 
 settings = JSON.parse fs.readFileSync argv._[0]
 
+# Map of GitHub username -> Gravatar URL.
+# The URL might be null for names like 'WIP' and 'ALL'
+usernameToAvatar = {}
+
 # -------------------------------------------------------------------------
 # GITHUB OAUTH INITIALIZATION
 # -------------------------------------------------------------------------
@@ -222,6 +226,49 @@ app.get '/', ensureAuthenticated, (req, res) ->
           pullCb()
 
       async.forEach pulls, iterator, (err) ->
+        cb err, pulls
+
+    # Replace submitter and reviewers with { username: ..., avatar: ... } objects.
+    (pulls, cb) ->
+
+      # Collect all names of reviewers.
+      usernames = {}
+      for pull in pulls
+        usernames[pull.user.login] = true
+        for name in pull.reviewers
+          usernames[name] = true
+
+      # Make sure we have avatars for everybody.
+      iterator = (username, cb2) ->
+        if username in ['wip', 'all'] or username of usernameToAvatar
+          return cb2()
+
+        github.user.getFrom {
+          user: username
+        }, (err, res) ->
+          return cb2 err if err
+          usernameToAvatar[username] = res.avatar_url
+          cb2()
+
+      # When done, replace properties with objects.
+      async.forEach Object.keys(usernames), iterator, (err) ->
+        for pull in pulls
+          pull.submitter =
+            username: pull.user.login
+            avatar: usernameToAvatar[pull.user.login]
+
+          if pull.last_commenter
+            pull.last_commenter =
+              username: pull.last_commenter
+              avatar: usernameToAvatar[pull.last_commenter]
+
+          obj = []
+          for name in pull.reviewers
+            obj.push
+              username: name
+              avatar: usernameToAvatar[name]
+          pull.reviewers = obj
+
         cb err, pulls
 
     # Sort the pulls based on update time.

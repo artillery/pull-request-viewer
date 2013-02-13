@@ -18,6 +18,7 @@ tr.pullrequest img {
   height: 24px;
   vertical-align: middle;
   border-radius: 3px;
+  margin: 2px 0;
 }
 tr.pullrequest.ignore {
   opacity: 0.5;
