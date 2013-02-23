@@ -49,7 +49,9 @@
       <td><a href="{{html_url}}">#{{number}}</a></td>
       <td>{{title}}</td>
       <td>
-        <img src="{{submitter.avatar}}" title="{{username}}" alt="{{username}}"/>
+        {{#submitter}}
+        <img src="{{avatar}}" title="{{username}}" alt="{{username}}"/>
+        {{/submitter}}
       </td>
       <td>
         {{#reviewers}}
