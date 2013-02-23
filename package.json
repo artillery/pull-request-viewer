@@ -29,7 +29,7 @@
     "passport": "*",
     "passport-github": "*",
     "async": "*",
-    "moment": "*",
+    "moment": "2.x",
     "optimist": "*",
     "github": "*"
   },
