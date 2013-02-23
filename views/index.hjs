@@ -66,10 +66,10 @@
       <td><span class="label label-{{reviewStatusClass}}">{{reviewStatus}}</span></td>
       <td>{{num_comments}}</td>
       <td class="nowrap">
-        {{#last_commenter}}
+        {{#last_user}}
           <img src="{{avatar}}" title="{{username}}" alt="{{username}}"/>
-        {{/last_commenter}}
-        {{last_update}}
+        {{/last_user}}
+        {{last_update_string}}
       </td>
       <td><code>{{head.ref}}</code></td>
       <td><span class="label label-{{buildStatusClass}}">{{buildStatus}}</span></td>

@@ -126,6 +126,13 @@ app.get '/', ensureAuthenticated, (req, res) ->
             }, cb2
 
           (cb2) ->
+            github.gitdata.getCommit {
+              user: settings.github.user
+              repo: settings.github.repo
+              sha: pull.head.sha
+            }, cb2
+
+          (cb2) ->
             github.pullRequests.getComments {
               user: settings.github.user
               repo: settings.github.repo
@@ -155,19 +162,33 @@ app.get '/', ensureAuthenticated, (req, res) ->
             pull.buildStatusClass = 'ignore'
             pull.buildStatus = 'n/a'
 
+          # Get head commit for this pull.
+          head = results[1]
+
           # Combine issue comments and pull comments, then sort.
-          comments = results[1].concat results[2]
-          comments.sort (a, b) -> if a.updated_at < b.updated_at then -1 else 1
+          comments = results[2].concat results[3]
+
+          # Convert to moment for sortability.
+          for comment in comments
+            comment.updated_at = moment comment.updated_at
+
+          comments.sort (a, b) ->
+            return if a.updated_at.isBefore b.updated_at then -1 else 1
 
           # Record number of comments.
           pull.num_comments = comments.length
 
-          # Show relative time for last update.
-          pull.last_update = moment(pull.updated_at).fromNow()
+          # Show relative time for last commit or comment, whichever is more recent.
+          pull.last_user = pull.user.login
+          pull.last_update = moment head.committer.date
 
-          # Show name of last commenter.
-          if comments.length
-            pull.last_commenter = comments[comments.length - 1].user?.login
+          if comments.length > 0
+            lastComment = comments[comments.length - 1]
+            if lastComment.updated_at.isAfter pull.last_update
+              pull.last_user = lastComment.user.login
+              pull.last_update = lastComment.updated_at
+
+          pull.last_update_string = pull.last_update.fromNow()
 
           # Pull names from comments.
           reviewers = {}
@@ -210,21 +231,23 @@ app.get '/', ensureAuthenticated, (req, res) ->
             pull.title = "WIP: #{ pull.title }"
             delete reviewers.wip
 
-          # Check for GLHF in last few comments.
+          # Default status of New.
+          pull.reviewStatusClass = 'info'
+          pull.reviewStatus = 'New'
+
+          # Unless there are comments.
           if comments.length
+            pull.reviewStatusClass = 'default'
+            pull.reviewStatus = 'Discussing'
+
+          # Or there is e.g. GLHF in last comment.
+          if comments.length > 0
             body = comments[comments.length - 1].body
             for config in settings.reviewStatuses
               if new RegExp(config.regex, 'i').test body
                 pull.reviewStatusClass = config.class
                 pull.reviewStatus = config.title
                 break
-          if not pull.reviewStatus
-            if comments.length
-              pull.reviewStatusClass = 'default'
-              pull.reviewStatus = 'Discussing'
-            else
-              pull.reviewStatusClass = 'info'
-              pull.reviewStatus = 'New'
 
           # Add reviewers list to pull object.
           pull.reviewers = (k for k, v of reviewers)
@@ -263,10 +286,10 @@ app.get '/', ensureAuthenticated, (req, res) ->
             username: pull.user.login
             avatar: usernameToAvatar[pull.user.login]
 
-          if pull.last_commenter
-            pull.last_commenter =
-              username: pull.last_commenter
-              avatar: usernameToAvatar[pull.last_commenter]
+          if pull.last_user
+            pull.last_user =
+              username: pull.last_user
+              avatar: usernameToAvatar[pull.last_user]
 
           obj = []
           for name in pull.reviewers
@@ -280,17 +303,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
     # Sort the pulls based on update time.
     (pulls, cb) ->
       pulls.sort (a, b) ->
-        aTime = moment(a.updated_at).unix()
-        bTime = moment(b.updated_at).unix()
-        if a.class == 'info' and b.class != 'info'
-          # Always at top.
-          return -1
-        else if a.class == 'ignore' and b.class != 'ignore'
-          # Always at bottom.
-          return 1
-        else
-          # Otherwise just sort by time.
-          return if aTime > bTime then -1 else 1
+        if a.last_update.isBefore b.last_update then 1 else -1
 
       cb null, pulls
 
