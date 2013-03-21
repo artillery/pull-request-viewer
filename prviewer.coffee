@@ -309,7 +309,18 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
   ], (err, pulls) ->
     if err
-      res.send 500, "Error: #{ err }"
+      res.send """
+        <html>
+          <head>
+            <meta http-equiv="refresh" content="3"/>
+          <head>
+          <body>
+            Error: <code>#{ require('util').inspect err }</code>
+            <br/>
+            Refreshing in a few seconds...
+          </body>
+        </head>
+      """
     else
       res.render 'index',
         settings: settings
