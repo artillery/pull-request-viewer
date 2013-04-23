@@ -319,7 +319,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
             <br/>
             Refreshing in a few seconds...
           </body>
-        </head>
+        </html>
       """
     else
       res.render 'index',
