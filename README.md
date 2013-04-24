@@ -22,9 +22,24 @@ This application provides an alternative interface to viewing pull requests on G
     $ cd pull-request-viewer
     $ npm install
     $ npm install -g coffee-script nodemon
+    (SEE "TEMPORARY HACK" BELOW)
     $ vim settings.json # see below
     $ nodemon prviewer.coffee settings.json
-    
+
+## Temporary Hack (24 Apr 2013)
+
+Problem: passport-github uses the oauth2 module which doesn't specify a user-agent, which causes the GitHub API to complain. Until [this bug](https://github.com/ciaranj/node-oauth/pull/139) is fixed, we need to hot patch the oauth2 module.
+
+Solution: After both `npm installs`, modify the last few lines of `node_modules/passport-oauth/node_modules/oauth/lib/oauth2.js` to include a User-Agent header, like so:
+
+    exports.OAuth2.prototype.getProtectedResource= function(url, access_token, callback) {
+      this._request("GET", url, {"User-Agent": "Node"}, "", access_token, callback );
+    }
+
+    exports.OAuth2.prototype.get= function(url, access_token, callback) {
+      this._request("GET", url, {"User-Agent": "Node"}, "", access_token, callback );
+    }
+        
 ## Example settings.json
 
     {
