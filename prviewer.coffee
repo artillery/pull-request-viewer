@@ -14,6 +14,7 @@ async = require 'async'
 express = require 'express'
 fs = require 'fs'
 http = require 'http'
+md5 = require 'MD5'
 moment = require 'moment'
 optimist = require 'optimist'
 passport = require 'passport'
@@ -29,13 +30,28 @@ argv = optimist
 
 settings = JSON.parse fs.readFileSync argv._[0]
 
+requireEnv = (name) ->
+  value = process.env[name]
+  if not value?
+    console.error "Need to specify #{ name } env var"
+    process.exit(1)
+  return value
+
 # Map of GitHub username -> Gravatar URL.
 # The URL can be null for incorrect github usernames
 usernameToAvatar = {}
 
 # -------------------------------------------------------------------------
-# GITHUB OAUTH INITIALIZATION
+# GITHUB INITIALIZATION
 # -------------------------------------------------------------------------
+
+settings.github = {
+  user: requireEnv "GITHUB_USER"
+  repo: requireEnv "GITHUB_REPO"
+  clientID: requireEnv "GITHUB_CLIENT_ID"
+  clientSecret: requireEnv "GITHUB_CLIENT_SECRET"
+  callbackURL: requireEnv "GITHUB_CALLBACK_URL"
+}
 
 passport.use new GitHubStrategy({
   clientID: settings.github.clientID
@@ -63,8 +79,8 @@ app.configure ->
   app.use express.logger 'dev'
   app.use express.bodyParser()
   app.use express.methodOverride()
-  app.use express.cookieParser settings.cookieSecret
-  app.use express.session secret: settings.sessionSecret
+  app.use express.cookieParser md5(Math.random())
+  app.use express.session secret: md5(Math.random())
   app.use passport.initialize()
   app.use passport.session()
   app.use app.router

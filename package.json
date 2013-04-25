@@ -27,14 +27,16 @@
     "hjs": "*",
     "stylus": "*",
     "passport": "*",
-    "passport-github": "*",
+    "passport-github": "https://github.com/artillery/passport-github/archive/master.tar.gz",
     "async": "*",
+    "md5": "*",
     "moment": "2.x",
     "optimist": "*",
     "github": "*"
   },
   "license": "MIT",
   "engines": {
-    "node": ">=0.8"
+    "node": "0.8.x",
+    "npm": "1.1.x"
   }
 }

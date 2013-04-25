@@ -1,0 +1,22 @@
+{
+  "buildStatuses": [
+    { "title": "Success", "class": "success", "regex": "success" },
+    { "title": "Pending", "class": "warning", "regex": "pending" },
+    { "title": "Failed", "class": "important", "regex": "fail" }
+  ],
+  "reviewStatuses": [
+    { "title": "GLHF", "class": "success", "regex": "GLHF" },
+    { "title": "PTAL", "class": "warning", "regex": "PTAL" },
+    { "title": "Comments", "class": "warning", "regex": "comment[sz]|nits" }
+  ],
+  "reviewers": {
+      "mark": "mlogan",
+      "ian": "statico",
+      "indy": "arelius",
+      "jono": "jspiro",
+      "micah": "micahcatlin",
+      "tibo": "bkcore",
+      "thibaut": "bkcore",
+      "cihan": "cihanozcelik"
+  }
+}

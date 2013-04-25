@@ -18,54 +18,25 @@ This application provides an alternative interface to viewing pull requests on G
 
 ## Getting started
 
-    $ git clone git://github.com/artillery/pull-request-viewer.git
-    $ cd pull-request-viewer
-    $ npm install
-    $ npm install -g coffee-script nodemon
-    (SEE "TEMPORARY HACK" BELOW)
-    $ vim settings.json # see below
-    $ nodemon prviewer.coffee settings.json
+1. Follow the [Heroku Getting Started guide](https://devcenter.heroku.com/articles/quickstart) if you haven't already.
+1. Create an app on the [GitHub authorized applications page](https://github.com/settings/applications)
+1. Clone this repo and `cd` to it.
+1. Create a `.env` file that looks like the sample below.
+1. Run `env $(cat .env) nodemon prviewer.coffee settings.json`
 
-## Temporary Hack (24 Apr 2013)
+### Sample `.env` file
 
-Problem: passport-github uses the oauth2 module which doesn't specify a user-agent, which causes the GitHub API to complain. Until [this bug](https://github.com/ciaranj/node-oauth/pull/139) is fixed, we need to hot patch the oauth2 module.
+    GITHUB_USER=artillery
+    GITHUB_REPO=awesomesauce
+    GITHUB_CLIENT_ID=NNNNNNNNNNNNNNNNNNNN
+    GITHUB_CLIENT_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+    GITHUB_CALLBACK_URL=http://localhost:8000/auth/github/callback
 
-Solution: After both `npm installs`, modify the last few lines of `node_modules/passport-github/node_modules/passport-oauth/node_modules/oauth/lib/oauth2.js` to include a User-Agent header, like so:
+### Deploying to Heroku
 
-    exports.OAuth2.prototype.getProtectedResource= function(url, access_token, callback) {
-      this._request("GET", url, {"User-Agent": "Node"}, "", access_token, callback );
-    }
+1. If creating a new app, run `heroku create` and then set each config var using `heroku config` (read docs [here](https://devcenter.heroku.com/articles/config-vars)]
+1. Make sure the app runs locally with Foreman: `foreman start web`
+1. To deploy, run `git push heroku`
 
-    exports.OAuth2.prototype.get= function(url, access_token, callback) {
-      this._request("GET", url, {"User-Agent": "Node"}, "", access_token, callback );
-    }
-        
-## Example settings.json
-
-    {
-      "github": {
-        "user": "artillery",
-        "repo": "superstuff",
-        "clientID": "<see Applications in GitHub settings>",
-        "clientSecret": "<see Applications in GitHub settings>",
-        "callbackURL": "<see Applications in GitHub settings>"
-      },
-      "buildStatuses": [
-	    { "title": "Success", "class": "success", "regex": "success" },
-	    { "title": "Pending", "class": "warning", "regex": "pending" },
-	    { "title": "Failed", "class": "important", "regex": "fail" }
-	  ],
-      "reviewStatuses": [
-        { "title": "Looks good!", "class": "success", "regex": "LGTM" },
-        { "title": "Please take another look", "class": "info", "regex": "PTAL" },
-        { "title": "Comments", "class": "warning", "regex": "comments" }
-      ],
-      "cookieSecret": "<random>",
-      "sessionSecret": "<random>",
-      "reviewers": {
-        "mark": "mlogan",
-        "ian": "statico"
-      }
-    }
-
+--------------------------------------------------------------------
 Copyright 2013 Artillery Games, Inc. Licensed under the MIT license.
