@@ -23,12 +23,12 @@ stylus = require 'stylus'
 
 argv = optimist
   .usage('Usage: $0 settings.json')
-  .options('-h', alias: 'host', default: 'localhost')
-  .options('-p', alias: 'port', default: 8000)
   .demand(1)
   .argv
 
 settings = JSON.parse fs.readFileSync argv._[0]
+
+port = process.env.PORT or 8000
 
 requireEnv = (name) ->
   value = process.env[name]
@@ -72,7 +72,7 @@ passport.deserializeUser (user, done) -> done null, user
 app = express()
 
 app.configure ->
-  app.set 'port', argv.port
+  app.set 'port', port
   app.set 'views', "#{ __dirname }/views"
   app.set 'view engine', 'hjs'
   app.use express.favicon()
@@ -347,6 +347,6 @@ app.get '/', ensureAuthenticated, (req, res) ->
 # SERVER STARTUP
 # -------------------------------------------------------------------------
 
-http.createServer(app).listen argv.port, argv.host, ->
-  console.log "Pull Request Viewer listening on port http://#{ argv.host }:#{ argv.port }"
+http.createServer(app).listen port, ->
+  console.log "Pull Request Viewer listening on http://localhost:#{ argv.port }"
 
