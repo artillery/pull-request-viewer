@@ -21,6 +21,7 @@ This application provides an alternative interface to viewing pull requests on G
 1. Follow the [Heroku Getting Started guide](https://devcenter.heroku.com/articles/quickstart) if you haven't already.
 1. Create an app on the [GitHub authorized applications page](https://github.com/settings/applications)
 1. Clone this repo and `cd` to it.
+1. Run `npm install` and then `npm install -g nodemon coffee-script`
 1. Create a `.env` file that looks like the sample below.
 1. Run `env $(cat .env) nodemon prviewer.coffee settings.json`
 
