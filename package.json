@@ -23,6 +23,7 @@
     "git"
   ],
   "dependencies": {
+    "MD5": "*",
     "coffee-script": "1.3.x",
     "express": "3.0.6",
     "hjs": "*",
@@ -30,7 +31,6 @@
     "passport": "*",
     "passport-github": "https://github.com/artillery/passport-github/archive/master.tar.gz",
     "async": "*",
-    "md5": "*",
     "moment": "2.x",
     "optimist": "*",
     "github": "*"
