@@ -106,6 +106,12 @@ app.get '/logout', (req, res) ->
   res.redirect '/'
 
 ensureAuthenticated = (req, res, next) ->
+  # Force HTTPS - https://devcenter.heroku.com/articles/ssl
+  proto = req.headers['x-forwarded-proto']
+  if proto? and proto != 'https'
+    res.redirect "https://#{req.headers["host"]}#{req.url}"
+    return
+
   if req.isAuthenticated()
     return next()
   else
