@@ -7,7 +7,8 @@
   "reviewStatuses": [
     { "title": "GLHF", "class": "success", "regex": "GLHF" },
     { "title": "PTAL", "class": "warning", "regex": "PTAL" },
-    { "title": "Comments", "class": "warning", "regex": "comment[sz]|nits" }
+    { "title": "Comments", "class": "warning", "regex": "comment[sz]|nits" },
+    { "title": "GFMOM", "class": "error", "regex": "GFMOM" }
   ],
   "reviewers": {
       "mark": "mlogan",
