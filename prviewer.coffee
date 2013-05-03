@@ -124,6 +124,7 @@ ensureAuthenticated = (req, res, next) ->
 app.get '/', ensureAuthenticated, (req, res) ->
   github = new GitHubAPI(
     version: '3.0.0'
+    debug: true
     customHeaders:
       # Needed for the new GitHub API
       'User-Agent': 'pull-request-viewer'
