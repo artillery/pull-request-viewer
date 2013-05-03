@@ -41,3 +41,4 @@ This application provides an alternative interface to viewing pull requests on G
 
 --------------------------------------------------------------------
 Copyright 2013 Artillery Games, Inc. Licensed under the MIT license.
+
