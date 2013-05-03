@@ -122,7 +122,12 @@ ensureAuthenticated = (req, res, next) ->
 # -------------------------------------------------------------------------
 
 app.get '/', ensureAuthenticated, (req, res) ->
-  github = new GitHubAPI(version: '3.0.0')
+  github = new GitHubAPI(
+    version: '3.0.0'
+    customHeaders:
+      # Needed for the new GitHub API
+      'User-Agent': 'pull-request-viewer'
+  )
   github.authenticate type: 'oauth', token: req.user.accessToken
 
   username = req.user.profile.username
