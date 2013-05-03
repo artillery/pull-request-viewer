@@ -9,7 +9,8 @@
     { "title": "PTAL", "class": "warning", "regex": "PTAL" },
     { "title": "Comments", "class": "warning", "regex": "comment[sz]|nits" },
     { "title": "GFMOM", "class": "important", "regex": "GFMOM" },
-    { "title": "Blocked", "class": "important", "regex": "blocked|waiting" }
+    { "title": "Blocked", "class": "important", "regex": "blocked|waiting" },
+    { "title": "Fixing", "class": "default", "regex": "will fix|fixing" }
   ],
   "reviewers": {
       "mark": "mlogan",
