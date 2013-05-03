@@ -359,5 +359,5 @@ app.get '/', ensureAuthenticated, (req, res) ->
 # -------------------------------------------------------------------------
 
 http.createServer(app).listen port, ->
-  console.log "Pull Request Viewer listening on http://localhost:#{ argv.port }"
+  console.log "Pull Request Viewer listening on http://localhost:#{ port }"
 
