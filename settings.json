@@ -8,6 +8,7 @@
     { "title": "GLHF", "class": "success", "regex": "GLHF" },
     { "title": "PTAL", "class": "warning", "regex": "PTAL" },
     { "title": "Comments", "class": "warning", "regex": "comment[sz]|nits" },
+    { "title": "Ping!", "class": "warning", "regex": "ping" },
     { "title": "GFMOM", "class": "important", "regex": "GFMOM" },
     { "title": "Blocked", "class": "important", "regex": "blocked|waiting" },
     { "title": "Fixing", "class": "default", "regex": "will fix|fixing" }
