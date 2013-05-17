@@ -225,7 +225,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
             # Convert "IAN/MARK" to ['statico', 'mlogan']
             for name in names
-              if name in ['everyone', 'all']
+              if name in ['everyone', 'all', 'anyone', 'someone', 'anybody']
                 # Add all reviewers.
                 reviewers[name] = true for _, name of settings.reviewers
               else if name of settings.reviewers
