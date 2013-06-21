@@ -5,6 +5,7 @@
     { "title": "Failed", "class": "important", "regex": "fail" }
   ],
   "reviewStatuses": [
+    { "title": "GLHF+Comments", "class": "success", "regex": "((comment[sz]|nits).*GLHF)|(GLHF.*(comment[sz]|nits))" },
     { "title": "GLHF", "class": "success", "regex": "GLHF" },
     { "title": "PTAL", "class": "warning", "regex": "PTAL" },
     { "title": "Comments", "class": "warning", "regex": "comment[sz]|nits" },
