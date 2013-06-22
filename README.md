@@ -23,7 +23,7 @@ This application provides an alternative interface to viewing pull requests on G
 1. Clone this repo and `cd` to it.
 1. Run `npm install` and then `npm install -g nodemon coffee-script`
 1. Create a `.env` file that looks like the sample below.
-1. Run `env $(cat .env) nodemon prviewer.coffee settings.json`
+1. Run `npm run dev`
 
 ### Sample `.env` file
 

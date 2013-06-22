@@ -8,7 +8,8 @@
     "prviewer": "./prviewer.coffee"
   },
   "scripts": {
-    "start": "coffee prviewer"
+    "start": "coffee prviewer",
+    "dev": "env $(cat .env) ./prviewer.coffee settings.json"
   },
   "main": "./prviewer.coffee",
   "repository": {
