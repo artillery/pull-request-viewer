@@ -29,7 +29,7 @@
     "hjs": "*",
     "stylus": "*",
     "passport": "*",
-    "passport-github": "https://github.com/artillery/passport-github/archive/master.tar.gz",
+    "passport-github": ">=0.1.5",
     "async": "*",
     "moment": "2.x",
     "optimist": "*",
