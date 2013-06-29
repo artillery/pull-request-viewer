@@ -29,7 +29,7 @@
     "express": "3.0.6",
     "hjs": "*",
     "stylus": "*",
-    "passport": "*",
+    "passport": "latest",
     "passport-github": ">=0.1.5",
     "async": "*",
     "moment": "2.x",
