@@ -73,7 +73,7 @@ passport.deserializeUser (user, done) -> done null, user
 CACHE_MS = 5 * 60 * 1000
 
 getGitHubHelper = (token) ->
-  github = new GitHubAPI(version: '3.0.0', debug: true)
+  github = new GitHubAPI(version: '3.0.0')
   github.authenticate type: 'oauth', token: token
   return github
 getGitHubHelper = memoize getGitHubHelper # Cache forever.
