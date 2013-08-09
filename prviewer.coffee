@@ -15,6 +15,7 @@ express = require 'express'
 fs = require 'fs'
 http = require 'http'
 md5 = require 'MD5'
+memoize = require 'memoizee'
 moment = require 'moment'
 optimist = require 'optimist'
 passport = require 'passport'
@@ -64,6 +65,69 @@ passport.use new GitHubStrategy({
 
 passport.serializeUser (user, done) -> done null, user
 passport.deserializeUser (user, done) -> done null, user
+
+# -------------------------------------------------------------------------
+# GITHUB HELPERS
+# -------------------------------------------------------------------------
+
+CACHE_MS = 5 * 60 * 1000
+
+getGitHubHelper = (token) ->
+  github = new GitHubAPI(version: '3.0.0', debug: true)
+  github.authenticate type: 'oauth', token: token
+  return github
+getGitHubHelper = memoize getGitHubHelper # Cache forever.
+
+getAllPullRequests = (token, cb) ->
+  github = getGitHubHelper token
+  github.pullRequests.getAll {
+    user: settings.github.user
+    repo: settings.github.repo
+  }, cb
+getAllPullRequests = memoize getAllPullRequests, async: true, maxAge: CACHE_MS
+
+getStatuses = (token, sha, cb) ->
+  github = getGitHubHelper token
+  github.statuses.get {
+    user: settings.github.user
+    repo: settings.github.repo
+    sha: sha
+  }, cb
+getStatuses = memoize getStatuses, async: true, maxAge: CACHE_MS
+
+getCommit = (token, sha, cb) ->
+  github = getGitHubHelper token
+  github.gitdata.getCommit {
+    user: settings.github.user
+    repo: settings.github.repo
+    sha: sha
+  }, cb
+getCommit = memoize getCommit, async: true, maxAge: CACHE_MS
+
+getPullComments = (token, number, cb) ->
+  github = getGitHubHelper token
+  github.pullRequests.getComments {
+    user: settings.github.user
+    repo: settings.github.repo
+    number: number
+  }, cb
+getPullComments = memoize getPullComments, async: true, maxAge: CACHE_MS
+
+getIssueComments = (token, number, cb) ->
+  github = getGitHubHelper token
+  github.issues.getComments {
+    user: settings.github.user
+    repo: settings.github.repo
+    number: number
+  }, cb
+getIssueComments = memoize getIssueComments, async: true, maxAge: CACHE_MS
+
+getFrom = (token, username, cb) ->
+  github = getGitHubHelper token
+  github.user.getFrom {
+    user: username
+  }, cb
+getFrom = memoize getFrom, async: true # Cache forever.
 
 # -------------------------------------------------------------------------
 # EXPRESS INITIALIZATION
@@ -122,52 +186,22 @@ ensureAuthenticated = (req, res, next) ->
 # -------------------------------------------------------------------------
 
 app.get '/', ensureAuthenticated, (req, res) ->
-  github = new GitHubAPI(version: '3.0.0')
-  github.authenticate type: 'oauth', token: req.user.accessToken
-
+  token = req.user.accessToken
   username = req.user.profile.username
 
   async.waterfall [
 
     (cb) ->
-      github.pullRequests.getAll {
-        user: settings.github.user
-        repo: settings.github.repo
-      }, cb
+      getAllPullRequests token, cb
 
     (pulls, cb) ->
       iterator = (pull, pullCb) ->
 
         async.parallel [
-
-          (cb2) ->
-            github.statuses.get {
-              user: settings.github.user
-              repo: settings.github.repo
-              sha: pull.head.sha
-            }, cb2
-
-          (cb2) ->
-            github.gitdata.getCommit {
-              user: settings.github.user
-              repo: settings.github.repo
-              sha: pull.head.sha
-            }, cb2
-
-          (cb2) ->
-            github.pullRequests.getComments {
-              user: settings.github.user
-              repo: settings.github.repo
-              number: pull.number
-            }, cb2
-
-          (cb2) ->
-            github.issues.getComments {
-              user: settings.github.user
-              repo: settings.github.repo
-              number: pull.number
-            }, cb2
-
+          (cb2) -> getStatuses token, pull.head.sha, cb2
+          (cb2) -> getCommit token, pull.head.sha, cb2
+          (cb2) -> getPullComments token, pull.number, cb2
+          (cb2) -> getIssueComments token, pull.number, cb2
         ], (err, results) ->
           return pullCb err if err
 
@@ -294,9 +328,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
         if username of usernameToAvatar
           return cb2()
 
-        github.user.getFrom {
-          user: username
-        }, (err, res) ->
+        getFrom token, username, (err, res) ->
           return cb2 err if err
           usernameToAvatar[username] = res.avatar_url
           cb2()

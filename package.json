@@ -34,7 +34,8 @@
     "async": "*",
     "moment": "2.x",
     "optimist": "*",
-    "github": "*"
+    "github": "*",
+    "memoizee": "~0.2.5"
   },
   "license": "MIT",
   "engines": {
