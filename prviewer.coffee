@@ -47,12 +47,15 @@ usernameToAvatar = {}
 # -------------------------------------------------------------------------
 
 settings.github = {
-  user: requireEnv "GITHUB_USER"
-  repo: requireEnv "GITHUB_REPO"
   clientID: requireEnv "GITHUB_CLIENT_ID"
   clientSecret: requireEnv "GITHUB_CLIENT_SECRET"
   callbackURL: requireEnv "GITHUB_CALLBACK_URL"
+  repos: []
 }
+
+for spec in requireEnv('GITHUB_REPOS').split ','
+  [user, repo] = spec.split '/'
+  settings.github.repos.push { user: user, repo: repo }
 
 passport.use new GitHubStrategy({
   clientID: settings.github.clientID
@@ -73,60 +76,40 @@ passport.deserializeUser (user, done) -> done null, user
 CACHE_MS = 5 * 60 * 1000
 
 getGitHubHelper = (token) ->
-  github = new GitHubAPI(version: '3.0.0')
+  github = new GitHubAPI(version: '3.0.0', debug: process.env.DEBUG)
   github.authenticate type: 'oauth', token: token
   return github
 getGitHubHelper = memoize getGitHubHelper # Cache forever.
 
-getAllPullRequests = (token, cb) ->
+getAllPullRequests = (token, user, repo, cb) ->
+  console.log 'XXX', user, repo
   github = getGitHubHelper token
-  github.pullRequests.getAll {
-    user: settings.github.user
-    repo: settings.github.repo
-  }, cb
+  github.pullRequests.getAll { user: user, repo: repo }, cb
 getAllPullRequests = memoize getAllPullRequests, async: true, maxAge: CACHE_MS
 
-getStatuses = (token, sha, cb) ->
+getStatuses = (token, user, repo, sha, cb) ->
   github = getGitHubHelper token
-  github.statuses.get {
-    user: settings.github.user
-    repo: settings.github.repo
-    sha: sha
-  }, cb
+  github.statuses.get { user: user, repo: repo, sha: sha }, cb
 getStatuses = memoize getStatuses, async: true, maxAge: CACHE_MS
 
-getCommit = (token, sha, cb) ->
+getCommit = (token, user, repo, sha, cb) ->
   github = getGitHubHelper token
-  github.gitdata.getCommit {
-    user: settings.github.user
-    repo: settings.github.repo
-    sha: sha
-  }, cb
+  github.gitdata.getCommit { user: user, repo: repo, sha: sha }, cb
 getCommit = memoize getCommit, async: true, maxAge: CACHE_MS
 
-getPullComments = (token, number, cb) ->
+getPullComments = (token, user, repo, number, cb) ->
   github = getGitHubHelper token
-  github.pullRequests.getComments {
-    user: settings.github.user
-    repo: settings.github.repo
-    number: number
-  }, cb
+  github.pullRequests.getComments { user: user, repo: repo, number: number }, cb
 getPullComments = memoize getPullComments, async: true, maxAge: CACHE_MS
 
-getIssueComments = (token, number, cb) ->
+getIssueComments = (token, user, repo, number, cb) ->
   github = getGitHubHelper token
-  github.issues.getComments {
-    user: settings.github.user
-    repo: settings.github.repo
-    number: number
-  }, cb
+  github.issues.getComments { user: user, repo: repo, number: number }, cb
 getIssueComments = memoize getIssueComments, async: true, maxAge: CACHE_MS
 
 getFrom = (token, username, cb) ->
   github = getGitHubHelper token
-  github.user.getFrom {
-    user: username
-  }, cb
+  github.user.getFrom { user: username }, cb
 getFrom = memoize getFrom, async: true # Cache forever.
 
 # -------------------------------------------------------------------------
@@ -189,179 +172,197 @@ app.get '/', ensureAuthenticated, (req, res) ->
   token = req.user.accessToken
   username = req.user.profile.username
 
-  async.waterfall [
+  rateLimitRemaining = Infinity
+  allPulls = []
 
-    (cb) ->
-      getAllPullRequests token, cb
+  userRepoIterator = (spec, userRepoCb) ->
+    ghUser = spec.user
+    ghRepo = spec.repo
 
-    (pulls, cb) ->
-      iterator = (pull, pullCb) ->
+    async.waterfall [
 
-        async.parallel [
-          (cb2) -> getStatuses token, pull.head.sha, cb2
-          (cb2) -> getCommit token, pull.head.sha, cb2
-          (cb2) -> getPullComments token, pull.number, cb2
-          (cb2) -> getIssueComments token, pull.number, cb2
-        ], (err, results) ->
-          return pullCb err if err
+      (cb) ->
+        getAllPullRequests token, ghUser, ghRepo, cb
 
-          # Grab build status codes (if they exist).
-          statuses = results[0]
-          if statuses.length > 0
-            status = statuses[0].state
-            for config in settings.buildStatuses
-              if new RegExp(config.regex, 'i').test status
-                pull.buildStatusClass = config.class
-                pull.buildStatus = config.title
-                break
-          if not pull.buildStatus
-            pull.buildStatusClass = 'ignore'
-            pull.buildStatus = 'n/a'
+      (pulls, cb) ->
+        pullIterator = (pull, pullCb) ->
 
-          # Get head commit for this pull.
-          head = results[1]
+          async.parallel [
+            (cb2) -> getStatuses token, ghUser, ghRepo, pull.head.sha, cb2
+            (cb2) -> getCommit token, ghUser, ghRepo, pull.head.sha, cb2
+            (cb2) -> getPullComments token, ghUser, ghRepo, pull.number, cb2
+            (cb2) -> getIssueComments token, ghUser, ghRepo, pull.number, cb2
+          ], (err, results) ->
+            return pullCb err if err
 
-          # Combine issue comments and pull comments, then sort.
-          comments = results[2].concat results[3]
+            # Grab build status codes (if they exist).
+            statuses = results[0]
+            if statuses.length > 0
+              status = statuses[0].state
+              for config in settings.buildStatuses
+                if new RegExp(config.regex, 'i').test status
+                  pull.buildStatusClass = config.class
+                  pull.buildStatus = config.title
+                  break
+            if not pull.buildStatus
+              pull.buildStatusClass = 'ignore'
+              pull.buildStatus = 'n/a'
 
-          # Convert to moment for sortability.
-          for comment in comments
-            comment.updated_at = moment comment.updated_at
+            # Get rate limit remaining.
+            for result in results
+              value = result.meta?['x-ratelimit-remaining']
+              if value
+                rateLimitRemaining = Math.min(rateLimitRemaining, value)
 
-          comments.sort (a, b) ->
-            return if a.updated_at.isBefore b.updated_at then -1 else 1
+            # Get head commit for this pull.
+            head = results[1]
 
-          # Record number of comments.
-          pull.num_comments = comments.length
+            # Combine issue comments and pull comments, then sort.
+            comments = results[2].concat results[3]
 
-          # Show relative time for last commit or comment, whichever is more recent.
-          pull.last_user = pull.user.login
-          pull.last_update = moment head.committer.date
+            # Convert to moment for sortability.
+            for comment in comments
+              comment.updated_at = moment comment.updated_at
 
-          if comments.length > 0
-            lastComment = comments[comments.length - 1]
-            if lastComment.updated_at.isAfter pull.last_update
-              pull.last_user = lastComment.user.login
-              pull.last_update = lastComment.updated_at
+            comments.sort (a, b) ->
+              return if a.updated_at.isBefore b.updated_at then -1 else 1
 
-          pull.last_update_string = pull.last_update.fromNow()
+            # Record number of comments.
+            pull.num_comments = comments.length
 
-          # Pull names from comments.
-          reviewers = {}
+            # Show relative time for last commit or comment, whichever is more recent.
+            pull.last_user = pull.user.login
+            pull.last_update = moment head.committer.date
 
-          # Extract reviewers from pull title.
-          if match = pull.title.match /^([\w\/]+): /
-            # Strip the names out of the title.
-            pull.title = pull.title.substr match[0].length
+            if comments.length > 0
+              lastComment = comments[comments.length - 1]
+              if lastComment.updated_at.isAfter pull.last_update
+                pull.last_user = lastComment.user.login
+                pull.last_update = lastComment.updated_at
 
-            # Convert title to reviewers.
-            names = (n.toLowerCase() for n in match[1].split /\//)
+            pull.last_update_string = pull.last_update.fromNow()
 
-            # Convert "IAN/MARK" to ['statico', 'mlogan']
-            for name in names
-              if name in ['everyone', 'all', 'anyone', 'someone', 'anybody']
-                # Add all reviewers.
-                reviewers[name] = true for _, name of settings.reviewers
-              else if name of settings.reviewers
-                reviewers[settings.reviewers[name]] = true
-              else
-                reviewers[name] = true
+            # Pull names from comments.
+            reviewers = {}
 
-          # Is this pull a proposal?
-          if 'proposal' of reviewers
-            pull.class = 'info'
-            pull.title = "PROPOSAL: #{ pull.title }"
-            delete reviewers.proposal
+            # Extract reviewers from pull title.
+            if match = pull.title.match /^([\w\/]+): /
+              # Strip the names out of the title.
+              pull.title = pull.title.substr match[0].length
 
-          # Check for my username in submitter or reviewers.
-          if username == pull.user.login or username of reviewers
-            pull.class = 'warning'
+              # Convert title to reviewers.
+              names = (n.toLowerCase() for n in match[1].split /\//)
 
-          # Check for my username in any comments.
-          if username in (c.user.login for c in comments)
-            pull.class = 'warning'
+              # Convert "IAN/MARK" to ['statico', 'mlogan']
+              for name in names
+                if name in ['everyone', 'all', 'anyone', 'someone', 'anybody']
+                  # Add all reviewers.
+                  reviewers[name] = true for _, name of settings.reviewers
+                else if name of settings.reviewers
+                  reviewers[settings.reviewers[name]] = true
+                else
+                  reviewers[name] = true
 
-          # Is this pull a Work In Progress?
-          if 'wip' of reviewers
-            pull.class = 'ignore'
-            pull.title = "WIP: #{ pull.title }"
-            delete reviewers.wip
+            # Is this pull a proposal?
+            if 'proposal' of reviewers
+              pull.class = 'info'
+              pull.title = "PROPOSAL: #{ pull.title }"
+              delete reviewers.proposal
 
-          # Default status of New.
-          pull.reviewStatusClass = 'info'
-          pull.reviewStatus = 'New'
+            # Check for my username in submitter or reviewers.
+            if username == pull.user.login or username of reviewers
+              pull.class = 'warning'
 
-          # Unless there are comments.
-          if comments.length
-            pull.reviewStatusClass = 'default'
-            pull.reviewStatus = 'Discussing'
+            # Check for my username in any comments.
+            if username in (c.user.login for c in comments)
+              pull.class = 'warning'
 
-          # Or there is e.g. GLHF in last comment.
-          if comments.length > 0
-            body = comments[comments.length - 1].body
-            for config in settings.reviewStatuses
-              if new RegExp(config.regex, 'i').test body
-                pull.reviewStatusClass = config.class
-                pull.reviewStatus = config.title
-                break
+            # Is this pull a Work In Progress?
+            if 'wip' of reviewers
+              pull.class = 'ignore'
+              pull.title = "WIP: #{ pull.title }"
+              delete reviewers.wip
 
-          # Add reviewers list to pull object.
-          pull.reviewers = (k for k, v of reviewers)
+            # Default status of New.
+            pull.reviewStatusClass = 'info'
+            pull.reviewStatus = 'New'
 
-          pullCb()
+            # Unless there are comments.
+            if comments.length
+              pull.reviewStatusClass = 'default'
+              pull.reviewStatus = 'Discussing'
 
-      async.forEach pulls, iterator, (err) ->
-        cb err, pulls
+            # Or there is e.g. GLHF in last comment.
+            if comments.length > 0
+              body = comments[comments.length - 1].body
+              for config in settings.reviewStatuses
+                if new RegExp(config.regex, 'i').test body
+                  pull.reviewStatusClass = config.class
+                  pull.reviewStatus = config.title
+                  break
 
-    # Replace submitter and reviewers with { username: ..., avatar: ... } objects.
-    (pulls, cb) ->
+            # Add reviewers list to pull object.
+            pull.reviewers = (k for k, v of reviewers)
 
-      # Collect all names of reviewers.
-      usernames = {}
-      for pull in pulls
-        usernames[pull.user.login] = true
-        for name in pull.reviewers
-          usernames[name] = true
+            pullCb()
 
-      # Make sure we have avatars for everybody.
-      iterator = (username, cb2) ->
-        if username of usernameToAvatar
-          return cb2()
+        async.forEach pulls, pullIterator, (err) ->
+          cb err, pulls
 
-        getFrom token, username, (err, res) ->
-          return cb2 err if err
-          usernameToAvatar[username] = res.avatar_url
-          cb2()
+      # Replace submitter and reviewers with { username: ..., avatar: ... } objects.
+      (pulls, cb) ->
 
-      # When done, replace properties with objects.
-      async.forEach Object.keys(usernames), iterator, (err) ->
+        # Collect all names of reviewers.
+        usernames = {}
         for pull in pulls
-          pull.submitter =
-            username: pull.user.login
-            avatar: usernameToAvatar[pull.user.login]
-
-          if pull.last_user
-            pull.last_user =
-              username: pull.last_user
-              avatar: usernameToAvatar[pull.last_user]
-
-          obj = []
+          usernames[pull.user.login] = true
           for name in pull.reviewers
-            obj.push
-              username: name
-              avatar: usernameToAvatar[name]
-          pull.reviewers = obj
+            usernames[name] = true
 
-        cb err, pulls
+        # Make sure we have avatars for everybody.
+        userIterator = (username, cb2) ->
+          if username of usernameToAvatar
+            return cb2()
 
-    # Sort the pulls based on update time.
-    (pulls, cb) ->
-      pulls.sort (a, b) ->
-        if a.last_update.isBefore b.last_update then 1 else -1
+          getFrom token, username, (err, res) ->
+            return cb2 err if err
+            usernameToAvatar[username] = res.avatar_url
+            cb2()
 
-      cb null, pulls
+        # When done, replace properties with objects.
+        async.forEach Object.keys(usernames), userIterator, (err) ->
+          for pull in pulls
+            pull.submitter =
+              username: pull.user.login
+              avatar: usernameToAvatar[pull.user.login]
 
-  ], (err, pulls) ->
+            if pull.last_user
+              pull.last_user =
+                username: pull.last_user
+                avatar: usernameToAvatar[pull.last_user]
+
+            obj = []
+            for name in pull.reviewers
+              obj.push
+                username: name
+                avatar: usernameToAvatar[name]
+            pull.reviewers = obj
+
+          cb err, pulls
+
+      # Sort the pulls based on update time.
+      (pulls, cb) ->
+        pulls.sort (a, b) ->
+          if a.last_update.isBefore b.last_update then 1 else -1
+
+        cb null, pulls
+
+    ], (err, pulls) ->
+      return userRepoCb err if err
+      allPulls = allPulls.concat pulls
+      userRepoCb null
+
+  async.each settings.github.repos, userRepoIterator, (err) ->
     if err
       res.send """
         <html>
@@ -379,7 +380,8 @@ app.get '/', ensureAuthenticated, (req, res) ->
       res.render 'index',
         settings: settings
         profile: req.user.profile
-        pulls: pulls
+        pulls: allPulls
+        rateLimitRemaining: rateLimitRemaining
 
 # -------------------------------------------------------------------------
 # SERVER STARTUP

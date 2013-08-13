@@ -5,7 +5,7 @@
 
 <head>
   <meta charset="utf-8"/>
-  <title>PRV - {{settings.github.user}}/{{settings.github.repo}}</title>
+  <title>PRV</title>
   <link rel='stylesheet' href='/stylesheets/style.css'/>
 </head>
 <body>
@@ -14,8 +14,7 @@
   <div class="navbar-inner">
     <div class="container">
       <a class="brand" href="/">
-        Pull Request Viewer -
-        {{settings.github.user}}/{{settings.github.repo}}
+        Pull Request Viewer
       </a>
       <div class="pull-right profile">
         <img src="{{profile._json.avatar_url}}"/>
@@ -78,6 +77,15 @@
     </tbody>
 
   </table>
+
+  <div class="muted">
+    Showing open pull requests from:
+    {{#settings.github.repos}}
+      <a href="https://github.com/{{user}}/{{repo}}" class="muted">{{user}}/{{repo}}</a>
+    {{/settings.github.repos}}
+    <br/>
+    Approximate GitHub API calls remaining: {{rateLimitRemaining}}
+  </div>
 
 </div>
 
