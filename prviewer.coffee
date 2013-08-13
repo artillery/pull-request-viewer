@@ -350,16 +350,14 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
           cb err, pulls
 
-      # Sort the pulls based on update time.
-      (pulls, cb) ->
-        pulls.sort (a, b) ->
-          if a.last_update.isBefore b.last_update then 1 else -1
-
-        cb null, pulls
-
     ], (err, pulls) ->
       return userRepoCb err if err
+
+      # Sort the pulls based on update time.
       allPulls = allPulls.concat pulls
+      allPulls.sort (a, b) ->
+        if a.last_update.isBefore b.last_update then 1 else -1
+
       userRepoCb null
 
   async.each settings.github.repos, userRepoIterator, (err) ->
