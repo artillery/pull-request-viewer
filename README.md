@@ -27,8 +27,7 @@ This application provides an alternative interface to viewing pull requests on G
 
 ### Sample `.env` file
 
-    GITHUB_USER=artillery
-    GITHUB_REPO=awesomesauce
+    GITHUB_REPOS=artillery/awesomesauce,artillery/spacelaser
     GITHUB_CLIENT_ID=NNNNNNNNNNNNNNNNNNNN
     GITHUB_CLIENT_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     GITHUB_CALLBACK_URL=http://localhost:8000/auth/github/callback
