@@ -82,7 +82,6 @@ getGitHubHelper = (token) ->
 getGitHubHelper = memoize getGitHubHelper # Cache forever.
 
 getAllPullRequests = (token, user, repo, cb) ->
-  console.log 'XXX', user, repo
   github = getGitHubHelper token
   github.pullRequests.getAll { user: user, repo: repo }, cb
 getAllPullRequests = memoize getAllPullRequests, async: true, maxAge: CACHE_MS
