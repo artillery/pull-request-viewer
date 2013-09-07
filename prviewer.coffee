@@ -158,7 +158,9 @@ ensureAuthenticated = (req, res, next) ->
     res.redirect "https://#{req.headers["host"]}#{req.url}"
     return
 
-  if req.isAuthenticated()
+  if req.param('token') == requireEnv 'DASHBOARD_TOKEN'
+    return next()
+  else if req.isAuthenticated()
     return next()
   else
     res.redirect '/auth/github'
@@ -167,9 +169,17 @@ ensureAuthenticated = (req, res, next) ->
 # DASHBOARD
 # -------------------------------------------------------------------------
 
+# Save the token of whoever logged in last so we can refresh the dashboard.
+lastUsedToken = null
+
 app.get '/', ensureAuthenticated, (req, res) ->
-  token = req.user.accessToken
-  username = req.user.profile.username
+  username = req.user?.profile?.username
+
+  token = req.user?.accessToken or lastUsedToken
+  if not token
+    throw new Error("No access token available")
+  if req.user?.accessToken
+    lastUsedToken = req.user?.accessToken
 
   rateLimitRemaining = Infinity
   allPulls = []
@@ -374,11 +384,35 @@ app.get '/', ensureAuthenticated, (req, res) ->
         </html>
       """
     else
-      res.render 'index',
-        settings: settings
-        profile: req.user.profile
-        pulls: allPulls
-        rateLimitRemaining: rateLimitRemaining
+
+      if req.param('dashboard')
+        # Return JSON in Geckoboard format.
+
+        labelsToCSSColor =
+          default: 'grey'
+          primary: 'darkblue'
+          success: 'darkgreen'
+          info: 'darkcyan'
+          warning: 'darkorange'
+          danger: 'darkred'
+
+        items = []
+        for pull in allPulls
+          items.push
+            label:
+              name: pull.reviewStatus
+              color: labelsToCSSColor[pull.reviewStatusClass]
+            title:
+              text: "##{ pull.number } - #{ pull.title }"
+            description: "by #{ pull.submitter.username } - for #{ (r.username for r in pull.reviewers) }"
+        res.json items
+
+      else
+        res.render 'index',
+          settings: settings
+          profile: req.user.profile
+          pulls: allPulls
+          rateLimitRemaining: rateLimitRemaining
 
 # -------------------------------------------------------------------------
 # SERVER STARTUP

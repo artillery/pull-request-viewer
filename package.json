@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "coffee prviewer",
-    "dev": "env $(cat .env) ./prviewer.coffee settings.json"
+    "dev": "env $(cat .env) nodemon ./prviewer.coffee settings.json"
   },
   "main": "./prviewer.coffee",
   "repository": {
