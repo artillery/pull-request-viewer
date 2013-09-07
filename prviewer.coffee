@@ -398,6 +398,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
         items = []
         for pull in allPulls
+          continue if pull.class == 'ignore'
           items.push
             label:
               name: pull.reviewStatus
