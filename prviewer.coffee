@@ -257,7 +257,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
             # Extract reviewers from pull title.
             if match = pull.title.match /^([\w\/]+): /
               # Strip the names out of the title.
-              pull.title = pull.title.substr match[0].length
+              pull.displayTitle = pull.title.substr match[0].length
 
               # Convert title to reviewers.
               names = (n.toLowerCase() for n in match[1].split /\//)
@@ -275,7 +275,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
             # Is this pull a proposal?
             if 'proposal' of reviewers
               pull.class = 'info'
-              pull.title = "PROPOSAL: #{ pull.title }"
+              pull.displayTitle = "PROPOSAL: #{ pull.displayTitle }"
               delete reviewers.proposal
 
             # Check for my username in submitter or reviewers.
@@ -289,7 +289,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
             # Is this pull a Work In Progress?
             if 'wip' of reviewers
               pull.class = 'ignore'
-              pull.title = "WIP: #{ pull.title }"
+              pull.displayTitle = "WIP: #{ pull.displayTitle }"
               delete reviewers.wip
 
             # Default status of New.
@@ -404,8 +404,8 @@ app.get '/', ensureAuthenticated, (req, res) ->
               name: pull.reviewStatus
               color: labelsToCSSColor[pull.reviewStatusClass]
             title:
-              text: "##{ pull.number } - #{ pull.title }"
-            description: "by #{ pull.submitter.username } - for #{ (r.username for r in pull.reviewers) }"
+              text: "##{ pull.number } - #{ pull.displayTitle }"
+            description: "by #{ pull.submitter.username } - for #{ (r.username for r in pull.reviewers).join ', ' }"
         res.json items
 
       else

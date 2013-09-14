@@ -46,7 +46,7 @@
     {{#pulls}}
     <tr class="pullrequest {{class}}">
       <td><a href="{{html_url}}">#{{number}}</a></td>
-      <td>{{title}}</td>
+      <td>{{displayTitle}}</td>
       <td>
         {{#submitter}}
         <img src="{{avatar}}" title="{{username}}" alt="{{username}}"/>
