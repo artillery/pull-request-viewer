@@ -31,11 +31,11 @@
     "stylus": "*",
     "passport": "latest",
     "passport-github": ">=0.1.5",
-    "async": "*",
     "moment": "2.x",
     "optimist": "*",
     "github": "*",
-    "memoizee": "~0.2.5"
+    "memoizee": "~0.2.5",
+    "q": "~0.9.7"
   },
   "license": "MIT",
   "engines": {
