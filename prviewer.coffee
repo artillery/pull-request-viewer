@@ -306,23 +306,23 @@ app.get '/', ensureAuthenticated, (req, res) ->
       # Add reviewers list to pull object.
       pull.reviewers = (k for k, v of reviewers)
 
-      # Replace user objects with username/avatar
-      makeUserObj = (username) ->
+      # Replace usernames with { username, avatar } objects for the template.
+      getUserObj = (username) ->
         return getFrom(token, username).then (user) ->
           obj = { username: username, avatar: user.avatar_url }
           return Q(obj)
 
-      userPromises = [
-        makeUserObj(pull.user.login).then (obj) -> pull.submitter = obj
-      ]
+      promises = []
+
+      promises.push getUserObj(pull.user.login).then (obj) -> pull.submitter = obj
       if pull.last_user
-        userPromises.push makeUserObj(pull.last_user).then (obj) -> pull.last_user = obj
+        promises.push getUserObj(pull.last_user).then (obj) -> pull.last_user = obj
 
       for username in pull.reviewers
-        userPromises.push makeUserObj(username).then (obj) -> pull.reviewers.push obj
-      pull.reviewers = []
+        promises.push getUserObj(username).then (obj) -> pull.reviewers.push obj
+      pull.reviewers = [] # Above callbacks happen after this.
 
-      return Q(pull)
+      return Q.all(promises).thenResolve(pull)
 
   # Annotate a bunch of pulls.
   annotatePulls = (pulls) ->
