@@ -326,6 +326,8 @@ app.get '/', ensureAuthenticated, (req, res) ->
             userPromises.push makeUserObj(username).then (obj) -> pull.reviewers.push obj
           pull.reviewers = []
 
+          return Q(pull)
+
     return Q.all(promises) # XXXX do we need Q.all?
 
   # Sort the pull requests in our own special way.
