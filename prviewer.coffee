@@ -328,7 +328,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
           return Q(pull)
 
-    return Q.all(promises) # XXXX do we need Q.all?
+    return Q.all(promises)
 
   # Sort the pull requests in our own special way.
   sortPulls = (pulls) ->
