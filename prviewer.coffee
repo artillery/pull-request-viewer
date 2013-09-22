@@ -10,7 +10,7 @@
 
 GitHubAPI = require 'github'
 GitHubStrategy = require('passport-github').Strategy
-async = require 'async'
+Q = require 'q'
 express = require 'express'
 fs = require 'fs'
 http = require 'http'
@@ -37,10 +37,6 @@ requireEnv = (name) ->
     console.error "Need to specify #{ name } env var"
     process.exit(1)
   return value
-
-# Map of GitHub username -> Gravatar URL.
-# The URL can be null for incorrect github usernames
-usernameToAvatar = {}
 
 # -------------------------------------------------------------------------
 # GITHUB INITIALIZATION
@@ -83,33 +79,33 @@ getGitHubHelper = memoize getGitHubHelper # Cache forever.
 
 getAllPullRequests = (token, user, repo, cb) ->
   github = getGitHubHelper token
-  github.pullRequests.getAll { user: user, repo: repo }, cb
-getAllPullRequests = memoize getAllPullRequests, async: true, maxAge: CACHE_MS
+  return Q.ninvoke github.pullRequests, 'getAll', { user: user, repo: repo }
+getAllPullRequests = memoize getAllPullRequests, maxAge: CACHE_MS
 
-getStatuses = (token, user, repo, sha, cb) ->
+getBuildStatuses = (token, user, repo, sha, cb) ->
   github = getGitHubHelper token
-  github.statuses.get { user: user, repo: repo, sha: sha }, cb
-getStatuses = memoize getStatuses, async: true, maxAge: CACHE_MS
+  return Q.ninvoke github.statuses, 'get', { user: user, repo: repo, sha: sha }
+getBuildStatuses = memoize getBuildStatuses, maxAge: CACHE_MS
 
 getCommit = (token, user, repo, sha, cb) ->
   github = getGitHubHelper token
-  github.gitdata.getCommit { user: user, repo: repo, sha: sha }, cb
-getCommit = memoize getCommit, async: true, maxAge: CACHE_MS
+  return Q.ninvoke github.gitdata, 'getCommit', { user: user, repo: repo, sha: sha }
+getCommit = memoize getCommit, maxAge: CACHE_MS
 
 getPullComments = (token, user, repo, number, cb) ->
   github = getGitHubHelper token
-  github.pullRequests.getComments { user: user, repo: repo, number: number }, cb
-getPullComments = memoize getPullComments, async: true, maxAge: CACHE_MS
+  return Q.ninvoke github.pullRequests, 'getComments', { user: user, repo: repo, number: number }
+getPullComments = memoize getPullComments, maxAge: CACHE_MS
 
 getIssueComments = (token, user, repo, number, cb) ->
   github = getGitHubHelper token
-  github.issues.getComments { user: user, repo: repo, number: number }, cb
-getIssueComments = memoize getIssueComments, async: true, maxAge: CACHE_MS
+  return Q.ninvoke github.issues, 'getComments', { user: user, repo: repo, number: number }
+getIssueComments = memoize getIssueComments, maxAge: CACHE_MS
 
 getFrom = (token, username, cb) ->
   github = getGitHubHelper token
-  github.user.getFrom { user: username }, cb
-getFrom = memoize getFrom, async: true # Cache forever.
+  return Q.ninvoke github.user, 'getFrom', { user: username }
+getFrom = memoize getFrom # Cache forever.
 
 # -------------------------------------------------------------------------
 # EXPRESS INITIALIZATION
@@ -182,238 +178,221 @@ app.get '/', ensureAuthenticated, (req, res) ->
     lastUsedToken = req.user?.accessToken
 
   rateLimitRemaining = Infinity
-  allPulls = []
 
-  userRepoIterator = (spec, userRepoCb) ->
-    ghUser = spec.user
-    ghRepo = spec.repo
+  # -------------------------------------------------------------------------
 
-    async.waterfall [
+  # Get all of the pull requests from GitHub.
+  fetchAllPulls = ->
+    repos = settings.github.repos
+    promises = (getAllPullRequests(token, spec.user, spec.repo) for spec in repos)
+    return Q.all(promises).then (listOfPulls) ->
+      # Turn the list of lists into a single list with every pull request.
+      pulls = []
+      for list in listOfPulls
+        pulls = pulls.concat list
+      return Q(pulls)
 
-      (cb) ->
-        getAllPullRequests token, ghUser, ghRepo, cb
+  # Add all of the fun information to a pull request.
+  annotateOnePull = (pull) ->
+    ghUser = pull.base.user.login
+    ghRepo = pull.base.repo.name
+    return Q.all([
+      getBuildStatuses token, ghUser, ghRepo, pull.head.sha
+      getCommit token, ghUser, ghRepo, pull.head.sha
+      getPullComments token, ghUser, ghRepo, pull.number
+      getIssueComments token, ghUser, ghRepo, pull.number
+    ]).then (results) ->
+      [statuses, head, pullComments, issueComments] = results
 
-      (pulls, cb) ->
-        pullIterator = (pull, pullCb) ->
+      # Grab build status codes (if they exist).
+      if statuses.length > 0
+        status = statuses[0].state
+        for config in settings.buildStatuses
+          if new RegExp(config.regex, 'i').test status
+            pull.buildStatusClass = config.class
+            pull.buildStatus = config.title
+            break
+      if not pull.buildStatus
+        pull.buildStatusClass = 'ignore'
+        pull.buildStatus = 'n/a'
 
-          async.parallel [
-            (cb2) -> getStatuses token, ghUser, ghRepo, pull.head.sha, cb2
-            (cb2) -> getCommit token, ghUser, ghRepo, pull.head.sha, cb2
-            (cb2) -> getPullComments token, ghUser, ghRepo, pull.number, cb2
-            (cb2) -> getIssueComments token, ghUser, ghRepo, pull.number, cb2
-          ], (err, results) ->
-            return pullCb err if err
+      # Get rate limit remaining.
+      for result in results
+        value = result.meta?['x-ratelimit-remaining']
+        if value
+          rateLimitRemaining = Math.min(rateLimitRemaining, value)
 
-            # Grab build status codes (if they exist).
-            statuses = results[0]
-            if statuses.length > 0
-              status = statuses[0].state
-              for config in settings.buildStatuses
-                if new RegExp(config.regex, 'i').test status
-                  pull.buildStatusClass = config.class
-                  pull.buildStatus = config.title
-                  break
-            if not pull.buildStatus
-              pull.buildStatusClass = 'ignore'
-              pull.buildStatus = 'n/a'
+      # Combine issue comments and pull comments, then sort.
+      comments = pullComments.concat issueComments
+      for comment in comments
+        comment.updated_at = moment comment.updated_at
+      comments.sort (a, b) ->
+        return if a.updated_at.isBefore b.updated_at then -1 else 1
 
-            # Get rate limit remaining.
-            for result in results
-              value = result.meta?['x-ratelimit-remaining']
-              if value
-                rateLimitRemaining = Math.min(rateLimitRemaining, value)
+      # Record number of comments.
+      pull.num_comments = comments.length
 
-            # Get head commit for this pull.
-            head = results[1]
+      # Show relative time for last commit or comment, whichever is more recent.
+      pull.last_user = pull.user.login
+      pull.last_update = moment head.committer.date
 
-            # Combine issue comments and pull comments, then sort.
-            comments = results[2].concat results[3]
+      # Get last user that interacted with the PR and what they said.
+      if comments.length > 0
+        lastComment = comments[comments.length - 1]
+        if lastComment.updated_at.isAfter pull.last_update
+          pull.last_user = lastComment.user.login
+          pull.last_update = lastComment.updated_at
+      pull.last_update_string = pull.last_update.fromNow()
 
-            # Convert to moment for sortability.
-            for comment in comments
-              comment.updated_at = moment comment.updated_at
+      # Pull names from comments.
+      reviewers = {}
 
-            comments.sort (a, b) ->
-              return if a.updated_at.isBefore b.updated_at then -1 else 1
+      # Extract reviewers from pull title.
+      if match = pull.title.match /^([\w\/]+): /
+        # Strip the names out of the title.
+        pull.displayTitle = pull.title.substr match[0].length
 
-            # Record number of comments.
-            pull.num_comments = comments.length
+        # Convert title to reviewers.
+        names = (n.toLowerCase() for n in match[1].split /\//)
 
-            # Show relative time for last commit or comment, whichever is more recent.
-            pull.last_user = pull.user.login
-            pull.last_update = moment head.committer.date
+        # Convert "IAN/MARK" to ['statico', 'mlogan']
+        for name in names
+          if name in ['everyone', 'all', 'anyone', 'someone', 'anybody']
+            # Add all reviewers.
+            reviewers[name] = true for _, name of settings.reviewers
+          else if name of settings.reviewers
+            reviewers[settings.reviewers[name]] = true
+          else
+            reviewers[name] = true
 
-            if comments.length > 0
-              lastComment = comments[comments.length - 1]
-              if lastComment.updated_at.isAfter pull.last_update
-                pull.last_user = lastComment.user.login
-                pull.last_update = lastComment.updated_at
+      # Is this pull a proposal?
+      if 'proposal' of reviewers
+        pull.class = 'info'
+        pull.displayTitle = "PROPOSAL: #{ pull.displayTitle }"
+        delete reviewers.proposal
 
-            pull.last_update_string = pull.last_update.fromNow()
+      # Check for my username in submitter or reviewers.
+      if username == pull.user.login or username of reviewers
+        pull.class = 'warning'
 
-            # Pull names from comments.
-            reviewers = {}
+      # Check for my username in any comments.
+      if username in (c.user.login for c in comments)
+        pull.class = 'warning'
 
-            # Extract reviewers from pull title.
-            if match = pull.title.match /^([\w\/]+): /
-              # Strip the names out of the title.
-              pull.displayTitle = pull.title.substr match[0].length
+      # Is this pull a Work In Progress?
+      if 'wip' of reviewers
+        pull.class = 'ignore'
+        pull.displayTitle = "WIP: #{ pull.displayTitle }"
+        delete reviewers.wip
 
-              # Convert title to reviewers.
-              names = (n.toLowerCase() for n in match[1].split /\//)
+      # Default status of New.
+      pull.reviewStatusClass = 'info'
+      pull.reviewStatus = 'New'
 
-              # Convert "IAN/MARK" to ['statico', 'mlogan']
-              for name in names
-                if name in ['everyone', 'all', 'anyone', 'someone', 'anybody']
-                  # Add all reviewers.
-                  reviewers[name] = true for _, name of settings.reviewers
-                else if name of settings.reviewers
-                  reviewers[settings.reviewers[name]] = true
-                else
-                  reviewers[name] = true
+      # Unless there are comments.
+      if comments.length
+        pull.reviewStatusClass = 'default'
+        pull.reviewStatus = 'Discussing'
 
-            # Is this pull a proposal?
-            if 'proposal' of reviewers
-              pull.class = 'info'
-              pull.displayTitle = "PROPOSAL: #{ pull.displayTitle }"
-              delete reviewers.proposal
+      # Or there is e.g. GLHF in last comment.
+      if comments.length > 0
+        body = comments[comments.length - 1].body
+        for config in settings.reviewStatuses
+          if new RegExp(config.regex, 'i').test body
+            pull.reviewStatusClass = config.class
+            pull.reviewStatus = config.title
+            break
 
-            # Check for my username in submitter or reviewers.
-            if username == pull.user.login or username of reviewers
-              pull.class = 'warning'
+      # Add reviewers list to pull object.
+      pull.reviewers = (k for k, v of reviewers)
 
-            # Check for my username in any comments.
-            if username in (c.user.login for c in comments)
-              pull.class = 'warning'
+      # Replace usernames with { username, avatar } objects for the template.
+      getUserObj = (username) ->
+        return getFrom(token, username).then (user) ->
+          obj = { username: username, avatar: user.avatar_url }
+          return Q(obj)
 
-            # Is this pull a Work In Progress?
-            if 'wip' of reviewers
-              pull.class = 'ignore'
-              pull.displayTitle = "WIP: #{ pull.displayTitle }"
-              delete reviewers.wip
+      promises = []
 
-            # Default status of New.
-            pull.reviewStatusClass = 'info'
-            pull.reviewStatus = 'New'
+      promises.push getUserObj(pull.user.login).then (obj) -> pull.submitter = obj
+      if pull.last_user
+        promises.push getUserObj(pull.last_user).then (obj) -> pull.last_user = obj
 
-            # Unless there are comments.
-            if comments.length
-              pull.reviewStatusClass = 'default'
-              pull.reviewStatus = 'Discussing'
+      for username in pull.reviewers
+        promises.push getUserObj(username).then (obj) -> pull.reviewers.push obj
+      pull.reviewers = [] # Above callbacks happen after this.
 
-            # Or there is e.g. GLHF in last comment.
-            if comments.length > 0
-              body = comments[comments.length - 1].body
-              for config in settings.reviewStatuses
-                if new RegExp(config.regex, 'i').test body
-                  pull.reviewStatusClass = config.class
-                  pull.reviewStatus = config.title
-                  break
+      return Q.all(promises).thenResolve(pull)
 
-            # Add reviewers list to pull object.
-            pull.reviewers = (k for k, v of reviewers)
+  # Annotate a bunch of pulls.
+  annotatePulls = (pulls) ->
+    return Q.all(annotateOnePull(pull) for pull in pulls)
 
-            pullCb()
+  # Sort the pull requests in our own special way.
+  sortPulls = (pulls) ->
+    pulls.sort (a, b) ->
+      if not a.last_update then return 1
+      if not b.last_update then return -1
+      if a.last_update.isBefore b.last_update then 1 else -1
+    return Q(pulls)
 
-        async.forEach pulls, pullIterator, (err) ->
-          cb err, pulls
+  # Render the dashboard, either as HTML or as JSON for the Geckoboard.
+  renderDashboard = (pulls) ->
+    if req.param('dashboard')
+      # Return JSON in Geckoboard format.
 
-      # Replace submitter and reviewers with { username: ..., avatar: ... } objects.
-      (pulls, cb) ->
+      labelsToCSSColor =
+        default: 'grey'
+        primary: 'darkblue'
+        success: 'darkgreen'
+        info: 'darkcyan'
+        warning: 'darkorange'
+        danger: 'darkred'
 
-        # Collect all names of reviewers.
-        usernames = {}
-        for pull in pulls
-          usernames[pull.user.login] = true
-          for name in pull.reviewers
-            usernames[name] = true
+      items = []
+      for pull in pulls
+        continue if pull.class == 'ignore'
+        items.push
+          label:
+            name: pull.reviewStatus
+            color: labelsToCSSColor[pull.reviewStatusClass]
+          title:
+            text: "##{ pull.number } - #{ pull.displayTitle }"
+          description: "by #{ pull.submitter.username } - for #{ (r.username for r in pull.reviewers).join ', ' }"
+      res.json items
 
-        # Make sure we have avatars for everybody.
-        userIterator = (username, cb2) ->
-          if username of usernameToAvatar
-            return cb2()
-
-          getFrom token, username, (err, res) ->
-            return cb2 err if err
-            usernameToAvatar[username] = res.avatar_url
-            cb2()
-
-        # When done, replace properties with objects.
-        async.forEach Object.keys(usernames), userIterator, (err) ->
-          for pull in pulls
-            pull.submitter =
-              username: pull.user.login
-              avatar: usernameToAvatar[pull.user.login]
-
-            if pull.last_user
-              pull.last_user =
-                username: pull.last_user
-                avatar: usernameToAvatar[pull.last_user]
-
-            obj = []
-            for name in pull.reviewers
-              obj.push
-                username: name
-                avatar: usernameToAvatar[name]
-            pull.reviewers = obj
-
-          cb err, pulls
-
-    ], (err, pulls) ->
-      return userRepoCb err if err
-
-      # Sort the pulls based on update time.
-      allPulls = allPulls.concat pulls
-      allPulls.sort (a, b) ->
-        if a.last_update.isBefore b.last_update then 1 else -1
-
-      userRepoCb null
-
-  async.each settings.github.repos, userRepoIterator, (err) ->
-    if err
-      res.send """
-        <html>
-          <head>
-            <meta http-equiv="refresh" content="3"/>
-          <head>
-          <body>
-            Error: <code>#{ require('util').inspect err }</code>
-            <br/>
-            Refreshing in a few seconds...
-          </body>
-        </html>
-      """
     else
+      res.render 'index',
+        settings: settings
+        profile: req.user.profile
+        pulls: pulls
+        rateLimitRemaining: rateLimitRemaining
+  
+  # For errors, show a page that auto-refreshes. (Sometimes the GitHub API freaks out.)
+  renderError = (err) ->
+    res.send 500, """
+      <html>
+        <head>
+          <meta http-equiv="refresh" content="30"/>
+        <head>
+        <body>
+          Error: <code>#{ require('util').inspect err }</code>
+          <br/>
+          Stack trace, if any:
+          <br/>
+          <pre><code>#{ err.stack }</code></pre>
+          <br/>
+          Refreshing in a few seconds...
+        </body>
+      </html>
+    """
 
-      if req.param('dashboard')
-        # Return JSON in Geckoboard format.
-
-        labelsToCSSColor =
-          default: 'grey'
-          primary: 'darkblue'
-          success: 'darkgreen'
-          info: 'darkcyan'
-          warning: 'darkorange'
-          danger: 'darkred'
-
-        items = []
-        for pull in allPulls
-          continue if pull.class == 'ignore'
-          items.push
-            label:
-              name: pull.reviewStatus
-              color: labelsToCSSColor[pull.reviewStatusClass]
-            title:
-              text: "##{ pull.number } - #{ pull.displayTitle }"
-            description: "by #{ pull.submitter.username } - for #{ (r.username for r in pull.reviewers).join ', ' }"
-        res.json items
-
-      else
-        res.render 'index',
-          settings: settings
-          profile: req.user.profile
-          pulls: allPulls
-          rateLimitRemaining: rateLimitRemaining
+  fetchAllPulls()
+    .then(annotatePulls)
+    .then(sortPulls)
+    .then(renderDashboard)
+    .catch(renderError)
+    .done()
 
 # -------------------------------------------------------------------------
 # SERVER STARTUP
