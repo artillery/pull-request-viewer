@@ -169,7 +169,7 @@ ensureAuthenticated = (req, res, next) ->
 lastUsedToken = null
 
 app.get '/', ensureAuthenticated, (req, res) ->
-  username = req.user?.profile?.username
+  myUsername = req.user?.profile?.username
 
   token = req.user?.accessToken or lastUsedToken
   if not token
@@ -272,11 +272,11 @@ app.get '/', ensureAuthenticated, (req, res) ->
         delete reviewers.proposal
 
       # Check for my username in submitter or reviewers.
-      if username == pull.user.login or username of reviewers
+      if myUsername == pull.user.login or username of reviewers
         pull.class = 'warning'
 
       # Check for my username in any comments.
-      if username in (c.user.login for c in comments)
+      if myUsername in (c.user.login for c in comments)
         pull.class = 'warning'
 
       # Is this pull a Work In Progress?
@@ -367,7 +367,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
         profile: req.user.profile
         pulls: pulls
         rateLimitRemaining: rateLimitRemaining
-  
+
   # For errors, show a page that auto-refreshes. (Sometimes the GitHub API freaks out.)
   renderError = (err) ->
     res.send 500, """
