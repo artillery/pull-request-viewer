@@ -69,7 +69,7 @@ passport.deserializeUser (user, done) -> done null, user
 # GITHUB HELPERS
 # -------------------------------------------------------------------------
 
-CACHE_MS = 5 * 60 * 1000
+CACHE_MS = 1 * 60 * 1000
 
 getGitHubHelper = (token) ->
   github = new GitHubAPI(version: '3.0.0', debug: process.env.DEBUG)
