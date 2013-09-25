@@ -206,7 +206,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
       # Grab build status codes (if they exist).
       if statuses.length > 0
-        status = statuses[0].state
+        status = statuses[statuses.length - 1].state
         for config in settings.buildStatuses
           if new RegExp(config.regex, 'i').test status
             pull.buildStatusClass = config.class
