@@ -206,9 +206,11 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
       # Grab build status codes (if they exist).
       if statuses.length > 0
-        status = statuses[statuses.length - 1].state
+        status = statuses.reduce(
+          (prev, curr) -> return if curr.updated_at > prev.updated_at then curr else prev,
+          statuses[0])
         for config in settings.buildStatuses
-          if new RegExp(config.regex, 'i').test status
+          if new RegExp(config.regex, 'i').test status.state
             pull.buildStatusClass = config.class
             pull.buildStatus = config.title
             break
