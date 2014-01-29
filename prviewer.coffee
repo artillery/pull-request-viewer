@@ -10,7 +10,7 @@
 
 GitHubAPI = require 'github'
 GitHubStrategy = require('passport-github').Strategy
-Q = require 'q'
+Promise = require 'promise'
 express = require 'express'
 fs = require 'fs'
 http = require 'http'
@@ -79,32 +79,32 @@ getGitHubHelper = memoize getGitHubHelper # Cache forever.
 
 getAllPullRequests = (token, user, repo, cb) ->
   github = getGitHubHelper token
-  return Q.ninvoke github.pullRequests, 'getAll', { user: user, repo: repo }
+  return Promise.denodeify(github.pullRequests.getAll)({ user: user, repo: repo })
 getAllPullRequests = memoize getAllPullRequests, maxAge: CACHE_MS
 
 getBuildStatuses = (token, user, repo, sha, cb) ->
   github = getGitHubHelper token
-  return Q.ninvoke github.statuses, 'get', { user: user, repo: repo, sha: sha }
+  return Promise.denodeify(github.statuses.get)({ user: user, repo: repo, sha: sha })
 getBuildStatuses = memoize getBuildStatuses, maxAge: CACHE_MS
 
 getCommit = (token, user, repo, sha, cb) ->
   github = getGitHubHelper token
-  return Q.ninvoke github.gitdata, 'getCommit', { user: user, repo: repo, sha: sha }
+  return Promise.denodeify(github.gitdata.getCommit)({ user: user, repo: repo, sha: sha })
 getCommit = memoize getCommit, maxAge: CACHE_MS
 
 getPullComments = (token, user, repo, number, cb) ->
   github = getGitHubHelper token
-  return Q.ninvoke github.pullRequests, 'getComments', { user: user, repo: repo, number: number }
+  return Promise.denodeify(github.pullRequests.getComments)({ user: user, repo: repo, number: number })
 getPullComments = memoize getPullComments, maxAge: CACHE_MS
 
 getIssueComments = (token, user, repo, number, cb) ->
   github = getGitHubHelper token
-  return Q.ninvoke github.issues, 'getComments', { user: user, repo: repo, number: number }
+  return Promise.denodeify(github.issues.getComments)({ user: user, repo: repo, number: number })
 getIssueComments = memoize getIssueComments, maxAge: CACHE_MS
 
 getFrom = (token, username, cb) ->
   github = getGitHubHelper token
-  return Q.ninvoke github.user, 'getFrom', { user: username }
+  return Promise.denodeify(github.user.getFrom)({ user: username })
 getFrom = memoize getFrom # Cache forever.
 
 # -------------------------------------------------------------------------
@@ -185,18 +185,18 @@ app.get '/', ensureAuthenticated, (req, res) ->
   fetchAllPulls = ->
     repos = settings.github.repos
     promises = (getAllPullRequests(token, spec.user, spec.repo) for spec in repos)
-    return Q.all(promises).then (listOfPulls) ->
+    return Promise.all(promises).then (listOfPulls) ->
       # Turn the list of lists into a single list with every pull request.
       pulls = []
       for list in listOfPulls
         pulls = pulls.concat list
-      return Q(pulls)
+      return Promise.from(pulls)
 
   # Add all of the fun information to a pull request.
   annotateOnePull = (pull) ->
     ghUser = pull.base.user.login
     ghRepo = pull.base.repo.name
-    return Q.all([
+    return Promise.all([
       getBuildStatuses token, ghUser, ghRepo, pull.head.sha
       getCommit token, ghUser, ghRepo, pull.head.sha
       getPullComments token, ghUser, ghRepo, pull.number
@@ -312,7 +312,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
       getUserObj = (username) ->
         return getFrom(token, username).then (user) ->
           obj = { username: username, avatar: user.avatar_url }
-          return Q(obj)
+          return Promise.from(obj)
 
       promises = []
 
@@ -324,11 +324,13 @@ app.get '/', ensureAuthenticated, (req, res) ->
         promises.push getUserObj(username).then (obj) -> pull.reviewers.push obj
       pull.reviewers = [] # Above callbacks happen after this.
 
-      return Q.all(promises).thenResolve(pull)
+      onResolved = -> return Promise.from pull
+      onRejected = (err) -> throw err
+      return Promise.all(promises).then(onResolved, onRejected)
 
   # Annotate a bunch of pulls.
   annotatePulls = (pulls) ->
-    return Q.all(annotateOnePull(pull) for pull in pulls)
+    return Promise.all(annotateOnePull(pull) for pull in pulls)
 
   # Sort the pull requests in our own special way.
   sortPulls = (pulls) ->
@@ -336,7 +338,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
       if not a.last_update then return 1
       if not b.last_update then return -1
       if a.last_update.isBefore b.last_update then 1 else -1
-    return Q(pulls)
+    return Promise.from(pulls)
 
   # Render the dashboard, either as HTML or as JSON for the Geckoboard.
   renderDashboard = (pulls) ->
@@ -393,7 +395,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
     .then(annotatePulls)
     .then(sortPulls)
     .then(renderDashboard)
-    .catch(renderError)
+    .then(null, renderError)
     .done()
 
 # -------------------------------------------------------------------------

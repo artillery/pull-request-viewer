@@ -35,7 +35,7 @@
     "optimist": "*",
     "github": "*",
     "memoizee": "~0.2.5",
-    "q": "~0.9.7"
+    "promise": "~3.2.0"
   },
   "license": "MIT",
   "engines": {
