@@ -16,12 +16,18 @@
     { "title": "Derp!", "class": "info", "regex": "derp" }
   ],
   "reviewers": {
-      "mark": "mlogan",
+      "ankur": "anxman",
+      "bob": "bobarchibald",
+      "cihan": "cihanozcelik",
+      "eric": "WHiT3R4bBiT",
       "ian": "statico",
+      "jia": "jia83",
       "jono": "jspiro",
+      "mark": "mlogan",
+      "manoj": "manojkoushik",
       "micah": "micahcatlin",
-      "tibo": "bkcore",
+      "sean": "striderdoom",
       "thibaut": "bkcore",
-      "cihan": "cihanozcelik"
+      "tibo": "bkcore"
   }
 }
