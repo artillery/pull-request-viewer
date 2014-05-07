@@ -85,6 +85,8 @@
     {{/settings.github.repos}}
     <br/>
     Approximate GitHub API calls remaining: {{rateLimitRemaining}}
+    <br/>
+    Pull Requests older than one month are hidden.
   </div>
 
 </div>

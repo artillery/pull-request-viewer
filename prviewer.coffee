@@ -332,6 +332,12 @@ app.get '/', ensureAuthenticated, (req, res) ->
   annotatePulls = (pulls) ->
     return Promise.all(annotateOnePull(pull) for pull in pulls)
 
+  # Hide old pulls that nobody wants to close.
+  hideOldPulls = (pulls) ->
+    lastMonth = moment().subtract('month', 1)
+    pulls = (p for p in pulls when p.last_update.isAfter lastMonth)
+    return Promise.from pulls
+
   # Sort the pull requests in our own special way.
   sortPulls = (pulls) ->
     pulls.sort (a, b) ->
@@ -393,6 +399,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
   fetchAllPulls()
     .then(annotatePulls)
+    .then(hideOldPulls)
     .then(sortPulls)
     .then(renderDashboard)
     .then(null, renderError)
