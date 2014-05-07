@@ -31,13 +31,13 @@ html(lang='en')
             th Review Status
             th Comments
             th Last Update
-            th Branch
             th Build Status
 
         tbody
           for pull in pulls
             tr(class="pullrequest "+pull.class)
-              td: a(href=pull.html_url) ##{ pull.number }
+              td
+                a(href=pull.html_url) ##{ pull.number }
               td
                 = pull.displayTitle
                 &nbsp;
@@ -58,14 +58,17 @@ html(lang='en')
                       span= reviewer.username
               td
                 span(class="label label-"+pull.reviewStatusClass)= pull.reviewStatus
-              td= pull.num_comments
-              td.nowrap
+              td
+                = pull.num_comments
+              td.last_update
                 if pull.last_user
                   - var u = pull.last_user
                   img(src=u.avatar, title=u.username)
-                  = last_update_string
-              td
-                code= pull.head.ref
+                  if pull.last_comment
+                    span: a.muted(href=pull.last_comment.html_url)= pull.last_update_string
+                    div.content= pull.last_comment.body
+                  else
+                    span.muted= pull.last_update_string
               td
                 span(class="label label-"+pull.buildStatusClass)= pull.buildStatus
 

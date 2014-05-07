@@ -244,6 +244,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
         if lastComment.updated_at.isAfter pull.last_update
           pull.last_user = lastComment.user.login
           pull.last_update = lastComment.updated_at
+      pull.last_comment = lastComment
       pull.last_update_string = pull.last_update.fromNow()
 
       # Pull names from comments.
