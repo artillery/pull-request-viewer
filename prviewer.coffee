@@ -274,7 +274,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
         delete reviewers.proposal
 
       # Check for my username in submitter or reviewers.
-      if myUsername == pull.user.login or username of reviewers
+      if myUsername is pull.user.login or myUsername of reviewers
         pull.class = 'warning'
 
       # Check for my username in any comments.
