@@ -43,12 +43,15 @@ html(lang='en')
                 - var u = pull.submitter
                 img(src=u.avatar, title=u.username)
               td
-                for reviewer in pull.reviewers
-                  if reviewer.avatar
-                    - var u = reviewer
-                    img(src=u.avatar, title=u.username)
-                  else
-                    span= reviewer.username
+                if pull.anyReviewer
+                  span.label.label-info Anybody
+                else
+                  for reviewer in pull.reviewers
+                    if reviewer.avatar
+                      - var u = reviewer
+                      img(src=u.avatar, title=u.username)
+                    else
+                      span= reviewer.username
               td
                 span(class="label label-"+pull.reviewStatusClass)= pull.reviewStatus
               td= pull.num_comments

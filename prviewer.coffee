@@ -190,7 +190,6 @@ app.get '/', ensureAuthenticated, (req, res) ->
       pulls = []
       for list in listOfPulls
         pulls = pulls.concat list
-      pulls = pulls[0..5] # XXXX
       return Promise.from(pulls)
 
   # Add all of the fun information to a pull request.
@@ -259,10 +258,12 @@ app.get '/', ensureAuthenticated, (req, res) ->
         names = (n.toLowerCase() for n in match[1].split /\//)
 
         # Convert "IAN/MARK" to ['statico', 'mlogan']
+        pull.anyReviewer = false
         for name in names
           if name in ['everyone', 'all', 'anyone', 'someone', 'anybody']
             # Add all reviewers.
             reviewers[name] = true for _, name of settings.reviewers
+            pull.anyReviewer = true
           else if name of settings.reviewers
             reviewers[settings.reviewers[name]] = true
           else
