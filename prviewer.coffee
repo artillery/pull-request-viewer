@@ -116,7 +116,7 @@ app = express()
 app.configure ->
   app.set 'port', port
   app.set 'views', "#{ __dirname }/views"
-  app.set 'view engine', 'hjs'
+  app.set 'view engine', 'jade'
   app.use express.favicon()
   app.use express.logger 'dev'
   app.use express.bodyParser()
@@ -190,6 +190,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
       pulls = []
       for list in listOfPulls
         pulls = pulls.concat list
+      pulls = pulls[0..5] # XXXX
       return Promise.from(pulls)
 
   # Add all of the fun information to a pull request.
