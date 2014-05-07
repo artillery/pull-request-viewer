@@ -275,6 +275,12 @@ app.get '/', ensureAuthenticated, (req, res) ->
         pull.displayTitle = "PROPOSAL: #{ pull.displayTitle }"
         delete reviewers.proposal
 
+      # Extract tags from pull request title.
+      pull.tags = []
+      pull.displayTitle = pull.displayTitle.replace /\s*\[([^\]]+)\]/g, (_, tag) ->
+        pull.tags.push tag
+        return ''
+
       # Check for my username in submitter or reviewers.
       if myUsername is pull.user.login or myUsername of reviewers
         pull.class = 'warning'
