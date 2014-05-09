@@ -29,8 +29,8 @@ html(lang='en')
             th Submitter
             th Reviewers
             th Review Status
-            th Comments
-            th Last Update
+            th Updated At
+            th Last Comment
             th Build Status
 
         tbody
@@ -58,17 +58,16 @@ html(lang='en')
                       span= reviewer.username
               td
                 span(class="label label-"+pull.reviewStatusClass)= pull.reviewStatus
-              td
-                = pull.num_comments
+              td.nowrap
+                = pull.last_update_string
               td.last_update
-                if pull.last_user
+                if pull.last_comment && pull.last_user
                   - var u = pull.last_user
                   img(src=u.avatar, title=u.username)
-                  if pull.last_comment
-                    span: a.muted(href=pull.last_comment.html_url)= pull.last_update_string
-                    div.content= pull.last_comment.body
-                  else
-                    span.muted= pull.last_update_string
+                  a(href=pull.last_comment.html_url) ##{ pull.num_comments }
+                  div.content= pull.last_comment.body
+                else
+                  span.muted (none)
               td
                 span(class="label label-"+pull.buildStatusClass)= pull.buildStatus
 
