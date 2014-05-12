@@ -5,8 +5,29 @@ html(lang='en')
     meta(charset='utf8')
     meta(name='robots', content='noindex, nofollow')
     link(rel='stylesheet', href='/stylesheets/style.css')
+
+    script(src='/javascripts/jquery-1.11.1.min.js')
     script.
-      setTimeout(function(){location.reload()}, 60*1000);
+      // A simple document.reload() fails when the connection cuts out.
+      // Instead, reload the body of the page through XHR and keep trying if
+      // there's a failure.
+      (function() {
+        var settings = {
+          cache: false,
+          dataType: 'html',
+          timeout: 5000,
+          url: document.location.href,
+          error: function(xhr, status, err) {
+            console.error("Reloading failed: status=" + status + " error=" + err);
+          },
+          success: function(data, status, xhr) {
+            var body = $($.parseHTML(data)).not('title, meta, link, script');
+            $(document.body).empty().append(body);
+            $('#refresh').text("Refreshed at: " + new Date());
+          }
+        };
+        setInterval(function(){ $.ajax(settings); }, 60 * 1000);
+      })();
 
   body
 
@@ -40,7 +61,7 @@ html(lang='en')
                 a(href=pull.html_url) ##{ pull.number }
               td
                 = pull.displayTitle
-                &nbsp;
+                | &nbsp;
                 for tag in pull.tags
                   span.label.label-default= tag.toLowerCase()
               td
@@ -75,9 +96,11 @@ html(lang='en')
         | Showing open pull requests from:
         for repo in settings.github.repos
           a.muted(href="https://github.com/"+repo.user+"/"+repo.repo)
-            &nbsp;
+            | &nbsp;
             | #{ repo.user }/#{ repo.repo }
         br
         | Approximate GitHub API calls remaining: #{ rateLimitRemaining }
         br
         | Pull Requests older than one month are hidden.
+        br
+        span#refresh Loaded at #{ new Date() }
