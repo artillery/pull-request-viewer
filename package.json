@@ -27,15 +27,16 @@
     "MD5": "*",
     "coffee-script": "1.3.x",
     "express": "3.0.6",
+    "github": "*",
+    "humanize-plus": "^1.4.2",
     "jade": "*",
-    "stylus": "*",
-    "passport": "latest",
-    "passport-github": ">=0.1.5",
+    "memoizee": "~0.2.5",
     "moment": "2.x",
     "optimist": "*",
-    "github": "*",
-    "memoizee": "~0.2.5",
-    "promise": "~3.2.0"
+    "passport": "latest",
+    "passport-github": ">=0.1.5",
+    "promise": "~3.2.0",
+    "stylus": "*"
   },
   "license": "MIT",
   "engines": {

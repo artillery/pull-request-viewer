@@ -14,6 +14,7 @@ Promise = require 'promise'
 express = require 'express'
 fs = require 'fs'
 http = require 'http'
+humanize = require 'humanize-plus'
 md5 = require 'MD5'
 memoize = require 'memoizee'
 moment = require 'moment'
@@ -125,6 +126,9 @@ app.configure ->
   app.use express.session secret: md5(Math.random())
   app.use passport.initialize()
   app.use passport.session()
+  app.use (req, res, next) ->
+    res.locals.humanize = humanize
+    next()
   app.use app.router
   app.use stylus.middleware "#{ __dirname }/public"
   app.use express.static path.join "#{ __dirname }/public"

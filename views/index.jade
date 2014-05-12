@@ -100,7 +100,7 @@ html(lang='en')
                   - var u = pull.last_user
                   img(src=u.avatar, title=u.username)
                   a(href=pull.last_comment.html_url) ##{ pull.num_comments }
-                  div.content= pull.last_comment.body
+                  div.content= humanize.truncate(pull.last_comment.body, 200)
                 else
                   span.muted (none)
               td
