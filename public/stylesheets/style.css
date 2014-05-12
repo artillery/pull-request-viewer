@@ -38,6 +38,9 @@ div.branch {
   font-family: Menlo, Monaco, monospace;
   margin-top: 0.5em;
 }
+div.branch:hover {
+  outline: 1px solid #ccc;
+}
 .nowrap {
   white-space: nowrap;
 }
