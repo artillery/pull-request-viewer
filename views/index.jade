@@ -8,10 +8,11 @@ html(lang='en')
 
     script(src='/javascripts/jquery-1.11.1.min.js')
     script.
-      // A simple document.reload() fails when the connection cuts out.
-      // Instead, reload the body of the page through XHR and keep trying if
-      // there's a failure.
       (function() {
+
+        // A simple document.reload() fails when the connection cuts out.
+        // Instead, reload the body of the page through XHR and keep trying if
+        // there's a failure.
         var settings = {
           cache: false,
           dataType: 'html',
@@ -27,6 +28,18 @@ html(lang='en')
           }
         };
         setInterval(function(){ $.ajax(settings); }, 60 * 1000);
+
+        // Select the entire branch name when clicked.
+        $(document).on('mousedown', '.branch', function(e) {
+          if (typeof window.getSelection !== 'function') return;
+          var sel = window.getSelection();
+          var range = document.createRange();
+          range.selectNodeContents(e.target);
+          sel.removeAllRanges();
+          sel.addRange(range);
+          e.preventDefault();
+        });
+
       })();
 
   body
