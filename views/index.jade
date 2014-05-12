@@ -64,6 +64,7 @@ html(lang='en')
                 | &nbsp;
                 for tag in pull.tags
                   span.label.label-default= tag.toLowerCase()
+                div.branch= pull.head.ref
               td
                 - var u = pull.submitter
                 img(src=u.avatar, title=u.username)
