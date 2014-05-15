@@ -54,67 +54,74 @@ html(lang='en')
 
     div.container
 
-      table.table.table-bordered
+      if pulls.length
 
-        thead
-          tr
-            th Number
-            th Title
-            th Submitter
-            th Reviewers
-            th Review Status
-            th Updated At
-            th Last Comment
-            th Build Status
+        table.table.table-bordered
 
-        tbody
-          for pull in pulls
-            tr(class="pullrequest "+pull.class)
-              td
-                a(href=pull.html_url) ##{ pull.number }
-              td
-                = pull.displayTitle
-                | &nbsp;
-                for tag in pull.tags
-                  span.label.label-default= tag.toLowerCase()
-                div.branch= pull.head.ref
-              td
-                - var u = pull.submitter
-                img(src=u.avatar, title=u.username)
-              td
-                if pull.anyReviewer
-                  span.label.label-info Anybody
-                else
-                  for reviewer in pull.reviewers
-                    if reviewer.avatar
-                      - var u = reviewer
-                      img(src=u.avatar, title=u.username)
-                    else
-                      span= reviewer.username
-              td
-                span(class="label label-"+pull.reviewStatusClass)= pull.reviewStatus
-              td.nowrap
-                = pull.last_update_string
-              td.last_update
-                if pull.last_comment && pull.last_user
-                  - var u = pull.last_user
+          thead
+            tr
+              th Number
+              th Title
+              th Submitter
+              th Reviewers
+              th Review Status
+              th Updated At
+              th Last Comment
+              th Build Status
+
+          tbody
+            for pull in pulls
+              tr(class="pullrequest "+pull.class)
+                td
+                  a(href=pull.html_url) ##{ pull.number }
+                td
+                  = pull.displayTitle
+                  | &nbsp;
+                  for tag in pull.tags
+                    span.label.label-default= tag.toLowerCase()
+                  div.branch= pull.head.ref
+                td
+                  - var u = pull.submitter
                   img(src=u.avatar, title=u.username)
-                  a(href=pull.last_comment.html_url) ##{ pull.num_comments }
-                  div.content= humanize.truncate(pull.last_comment.body, 200)
-                else
-                  span.muted (none)
-              td
-                span(class="label label-"+pull.buildStatusClass)= pull.buildStatus
+                td
+                  if pull.anyReviewer
+                    span.label.label-info Anybody
+                  else
+                    for reviewer in pull.reviewers
+                      if reviewer.avatar
+                        - var u = reviewer
+                        img(src=u.avatar, title=u.username)
+                      else
+                        span= reviewer.username
+                td
+                  span(class="label label-"+pull.reviewStatusClass)= pull.reviewStatus
+                td.nowrap
+                  = pull.last_update_string
+                td.last_update
+                  if pull.last_comment && pull.last_user
+                    - var u = pull.last_user
+                    img(src=u.avatar, title=u.username)
+                    a(href=pull.last_comment.html_url) ##{ pull.num_comments }
+                    div.content= humanize.truncate(pull.last_comment.body, 200)
+                  else
+                    span.muted (none)
+                td
+                  span(class="label label-"+pull.buildStatusClass)= pull.buildStatus
 
-      div.muted
-        | Showing open pull requests from:
-        for repo in settings.github.repos
-          a.muted(href="https://github.com/"+repo.user+"/"+repo.repo)
-            | &nbsp;
-            | #{ repo.user }/#{ repo.repo }
-        br
-        | Approximate GitHub API calls remaining: #{ rateLimitRemaining }
-        br
-        | Pull Requests older than one month are hidden.
-        br
-        span#refresh Loaded at #{ new Date() }
+        div.muted
+          | Showing open pull requests from:
+          for repo in settings.github.repos
+            a.muted(href="https://github.com/"+repo.user+"/"+repo.repo)
+              | &nbsp;
+              | #{ repo.user }/#{ repo.repo }
+          br
+          | Approximate GitHub API calls remaining: #{ rateLimitRemaining }
+          br
+          | Pull Requests older than one month are hidden.
+          br
+          span#refresh Loaded at #{ new Date() }
+
+      else
+        div(style="text-align: center")
+          h1 No open pull requests!
+          img(src='http://i.imgur.com/ZtKoPEK.png')
