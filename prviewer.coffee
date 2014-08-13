@@ -255,6 +255,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
       reviewers = {}
 
       # Extract reviewers from pull title.
+      pull.displayTitle = pull.title
       if match = pull.title.match /^([\w\/]+): /
         # Strip the names out of the title.
         pull.displayTitle = pull.title.substr match[0].length
