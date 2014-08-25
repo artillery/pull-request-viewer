@@ -390,6 +390,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
         settings: settings
         profile: req.user.profile
         pulls: pulls
+        countMine: (true for p in pulls when p.class == 'warning').length
         rateLimitRemaining: rateLimitRemaining
 
   # For errors, show a page that auto-refreshes. (Sometimes the GitHub API freaks out.)

@@ -5,10 +5,25 @@ html(lang='en')
     meta(charset='utf8')
     meta(name='robots', content='noindex, nofollow')
     link(rel='stylesheet', href='/stylesheets/style.css')
+    link(rel='icon', href='/favicon.ico')
 
     script(src='/javascripts/jquery-1.11.1.min.js')
+    script(src='/javascripts/favico-0.3.5.min.js')
     script.
       (function() {
+
+        var favicon;
+        try {
+          favicon = new Favico({ animation: 'none' });
+        } catch (e) {
+          console.warn(e);
+        }
+        function updateBadge() {
+          if (favicon == null) return;
+          var count = Number($(document.body).data('count'));
+          favicon.badge(count);
+        }
+        $(document).on('ready', updateBadge);
 
         // A simple document.reload() fails when the connection cuts out.
         // Instead, reload the body of the page through XHR and keep trying if
@@ -25,6 +40,7 @@ html(lang='en')
             var body = $($.parseHTML(data)).not('title, meta, link, script');
             $(document.body).empty().append(body);
             $('#refresh').text("Refreshed at: " + new Date());
+            updateBadge();
           }
         };
         setInterval(function(){ $.ajax(settings); }, 60 * 1000);
@@ -42,7 +58,7 @@ html(lang='en')
 
       })();
 
-  body
+  body(data-count=countMine)
 
     div.navbar.navbar-inverse.navbar-fixed-top
       div.navbar-inner
