@@ -38,6 +38,10 @@ This application provides an alternative interface to viewing pull requests on G
 1. Make sure the app runs locally with Foreman: `foreman start web`
 1. To deploy, run `git push heroku`
 
+### Credits
+
+* Favicon from [Octicons by Github](https://www.iconfinder.com/icons/298789/git_pull_request_icon#size=128)
+
 --------------------------------------------------------------------
 Copyright 2013 Artillery Games, Inc. Licensed under the MIT license.
 
