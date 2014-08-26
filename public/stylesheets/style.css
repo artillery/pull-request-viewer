@@ -37,6 +37,7 @@ div.branch {
   font-size: x-small;
   font-family: Menlo, Monaco, monospace;
   margin-top: 0.5em;
+  cursor: pointer;
 }
 div.branch:hover {
   outline: 1px solid #ccc;
