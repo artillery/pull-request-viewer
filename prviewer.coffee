@@ -194,7 +194,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
       pulls = []
       for list in listOfPulls
         pulls = pulls.concat list
-      return Promise.from(pulls)
+      return Promise.resolve(pulls)
 
   # Add all of the fun information to a pull request.
   annotateOnePull = (pull) ->
@@ -326,7 +326,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
       getUserObj = (username) ->
         return getFrom(token, username).then (user) ->
           obj = { username: username, avatar: user.avatar_url }
-          return Promise.from(obj)
+          return Promise.resolve(obj)
 
       promises = []
 
@@ -338,7 +338,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
         promises.push getUserObj(username).then (obj) -> pull.reviewers.push obj
       pull.reviewers = [] # Above callbacks happen after this.
 
-      onResolved = -> return Promise.from pull
+      onResolved = -> return Promise.resolve pull
       onRejected = (err) -> throw err
       return Promise.all(promises).then(onResolved, onRejected)
 
@@ -350,7 +350,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
   hideOldPulls = (pulls) ->
     lastMonth = moment().subtract('month', 1)
     pulls = (p for p in pulls when p.last_update.isAfter lastMonth)
-    return Promise.from pulls
+    return Promise.resolve pulls
 
   # Sort the pull requests in our own special way.
   sortPulls = (pulls) ->
@@ -358,7 +358,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
       if not a.last_update then return 1
       if not b.last_update then return -1
       if a.last_update.isBefore b.last_update then 1 else -1
-    return Promise.from(pulls)
+    return Promise.resolve(pulls)
 
   # Render the dashboard, either as HTML or as JSON for the Geckoboard.
   renderDashboard = (pulls) ->
