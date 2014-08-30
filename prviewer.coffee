@@ -80,6 +80,14 @@ settings.github.forcedReviewers = do ->
       obj[user][repo].push reviewer
   return obj
 
+settings.reviewers ?= do -> # `?=` for backward-compatibility
+  obj = {}
+  if process.env.GITHUB_USERNAME_ALIASES
+    for spec in process.env.GITHUB_USERNAME_ALIASES.split(',')
+      [alias, username] = spec.split ':'
+      obj[alias] = username
+  return obj
+
 passport.use new GitHubStrategy({
   clientID: settings.github.clientID
   clientSecret: settings.github.clientSecret

@@ -9,7 +9,7 @@ This application provides an alternative interface to viewing pull requests on G
 * Uses GitHub for authentication
 * Highlights PRs involving you
 * Parses the last comment of a PR to set a status label
-* If PR titles begin with reviewer names `foo:` or `foo/bar/baz:`, the names will be converted to GitHub usernames per the settings file
+* If PR titles begin with reviewer usernames `foo:` or `foo/bar/baz:`, those GitHub usernames will become the reviewers. (See also GITHUB_USERNAME_ALIASES below.)
 * If PR titles begin with `everyone` or `all`, all reviewers will be added
 * Lists everyone involved in commenting in a PR
 * Shows and sorts by last update time
@@ -32,11 +32,21 @@ This application provides an alternative interface to viewing pull requests on G
     GITHUB_CLIENT_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     GITHUB_CALLBACK_URL=http://localhost:8000/auth/github/callback
 
-### Optional addtional env vars
+### Optional additional env vars
 
-`GITHUB_FORCE_REVIEWERS` is a list of Github usernames who should always review PRs from certain repos. This is in a comma-separated list in the format `<user>/<repo>:reviewer`. For multiple forced reviewers on the same repo, repeat the `<user>/<repo>` tuple with different usernames. For example:
+#### `GITHUB_FORCE_REVIEWERS`
+
+This is a list of GitHub usernames who should always review PRs from certain repos. This is in a comma-separated list in the format `<user>/<repo>:reviewer`. For multiple forced reviewers on the same repo, repeat the `<user>/<repo>` tuple with different usernames. For example:
 
     GITHUB_FORCE_REVIEWERS=foo/bar:user1,foo/bar:user2,baz/quux:user3
+
+#### `GITHUB_USERNAME_ALIASES`
+
+If your development group uses real names instead of GitHub usernames then it's easier to prefix a PR title with "Bob:" instead of "superl33th4ck3r:". `GITHUB_USERNAME_ALIASES` is a comma-separated list in the format `<alias>:<username>`. Any alias will be substituted for the GitHub username. For example:
+
+    GITHUB_USERNAME_ALIASES=joe:superl33th4ck3r,bob:megauser
+
+And your PR title could be "JOE/BOB: Fixes the thing."
 
 ### Deploying to Heroku
 
@@ -46,8 +56,7 @@ This application provides an alternative interface to viewing pull requests on G
 
 ### Credits
 
-* Favicon from [Octicons by Github](https://www.iconfinder.com/icons/298789/git_pull_request_icon#size=128)
+* Favicon from [Octicons by GitHub](https://www.iconfinder.com/icons/298789/git_pull_request_icon#size=128)
 
 --------------------------------------------------------------------
 Copyright 2013 Artillery Games, Inc. Licensed under the MIT license.
-
