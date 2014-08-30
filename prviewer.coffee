@@ -20,7 +20,7 @@ memoize = require 'memoizee'
 moment = require 'moment'
 optimist = require 'optimist'
 passport = require 'passport'
-path = require 'path'
+pathlib = require 'path'
 stylus = require 'stylus'
 
 argv = optimist
@@ -29,6 +29,18 @@ argv = optimist
   .argv
 
 settings = JSON.parse fs.readFileSync argv._[0]
+
+# Copy env from ./env
+env = pathlib.join __dirname, '.env'
+if fs.existsSync env
+  lines = fs.readFileSync(env, 'utf8').split '\n'
+  for line in lines
+    continue unless line
+    [key, value] = line.split '='
+    unless key and value
+      console.warn "Ignoring env line: '#{ line }'"
+      continue
+    process.env[key] = value
 
 port = process.env.PORT or 8000
 
@@ -145,7 +157,7 @@ app.configure ->
     next()
   app.use app.router
   app.use stylus.middleware "#{ __dirname }/public"
-  app.use express.static path.join "#{ __dirname }/public"
+  app.use express.static pathlib.join "#{ __dirname }/public"
 
 app.configure 'development', ->
   app.use express.errorHandler()
