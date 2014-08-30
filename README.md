@@ -2,7 +2,7 @@
 
 This application provides an alternative interface to viewing pull requests on GitHub. It sorts, highlights and categorizes pull requests based on our workflow.
 
-<img src="http://i.imgur.com/1XaEA.png"/>
+![screenshot](http://i.imgur.com/Bcg4aaP.png)
 
 ## Notable features
 
