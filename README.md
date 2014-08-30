@@ -32,6 +32,12 @@ This application provides an alternative interface to viewing pull requests on G
     GITHUB_CLIENT_SECRET=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
     GITHUB_CALLBACK_URL=http://localhost:8000/auth/github/callback
 
+### Optional addtional env vars
+
+`GITHUB_FORCE_REVIEWERS` is a list of Github usernames who should always review PRs from certain repos. This is in a comma-separated list in the format `<user>/<repo>:reviewer`. For multiple forced reviewers on the same repo, repeat the `<user>/<repo>` tuple with different usernames. For example:
+
+    GITHUB_FORCE_REVIEWERS=foo/bar:user1,foo/bar:user2,baz/quux:user3
+
 ### Deploying to Heroku
 
 1. If creating a new app, run `heroku create` and then set each config var using `heroku config` (read docs [here](https://devcenter.heroku.com/articles/config-vars)]

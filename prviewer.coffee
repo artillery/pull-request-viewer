@@ -54,6 +54,20 @@ for spec in requireEnv('GITHUB_REPOS').split ','
   [user, repo] = spec.split '/'
   settings.github.repos.push { user: user, repo: repo }
 
+settings.github.forcedReviewers = do ->
+  obj = {}
+  if process.env.GITHUB_FORCE_REVIEWERS
+    for spec in process.env.GITHUB_FORCE_REVIEWERS.split(',')
+      match = spec.match /^(.+)\/(.+):(.+)$/
+      if not match
+        console.error "Incorrect value in GITHUB_FORCE_REVIEWERS: #{ spec }"
+        continue
+      [_, user, repo, reviewer] = match
+      obj[user] ?= {}
+      obj[user][repo] ?= []
+      obj[user][repo].push reviewer
+  return obj
+
 passport.use new GitHubStrategy({
   clientID: settings.github.clientID
   clientSecret: settings.github.clientSecret
@@ -253,6 +267,11 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
       # Pull names from comments.
       reviewers = {}
+
+      # Add reviewers from GITHUB_FORCE_REVIEWERS, if any.
+      if names = settings.github.forcedReviewers[ghUser]?[ghRepo]
+        for name in names
+          reviewers[name] = true
 
       # Extract reviewers from pull title.
       pull.displayTitle = pull.title
