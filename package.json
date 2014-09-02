@@ -35,7 +35,7 @@
     "optimist": "*",
     "passport": "latest",
     "passport-github": ">=0.1.5",
-    "promise": "^5.0.0",
+    "promise": "5.0.0",
     "stylus": "*"
   },
   "license": "MIT",
