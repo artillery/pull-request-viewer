@@ -41,6 +41,7 @@ if fs.existsSync env
       console.warn "Ignoring env line: '#{ line }'"
       continue
     process.env[key] = value
+    console.log "Read from #{ env }: #{ key }=#{ value }"
 
 port = process.env.PORT or 8000
 
@@ -78,6 +79,7 @@ settings.github.forcedReviewers = do ->
       obj[user] ?= {}
       obj[user][repo] ?= []
       obj[user][repo].push reviewer
+  console.log "Forced reviewers:", JSON.stringify(obj, null, '  ')
   return obj
 
 settings.reviewers ?= do -> # `?=` for backward-compatibility
@@ -86,6 +88,7 @@ settings.reviewers ?= do -> # `?=` for backward-compatibility
     for spec in process.env.GITHUB_USERNAME_ALIASES.split(',')
       [alias, username] = spec.split ':'
       obj[alias] = username
+  console.log "Username aliases:", JSON.stringify(obj, null, '  ')
   return obj
 
 passport.use new GitHubStrategy({
@@ -290,6 +293,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
       # Add reviewers from GITHUB_FORCE_REVIEWERS, if any.
       if names = settings.github.forcedReviewers[ghUser]?[ghRepo]
+        console.log "Forcing #{ names } as reviewers for pull #{ pull.id }"
         for name in names
           reviewers[name] = true
 
