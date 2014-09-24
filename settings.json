@@ -14,24 +14,5 @@
     { "title": "Fixing", "class": "default", "regex": "will fix|fixing" },
     { "title": "Ping!", "class": "warning", "regex": "p[oi]ng|HA+Y" },
     { "title": "Derp!", "class": "info", "regex": "derp" }
-  ],
-  "reviewers": {
-      "ankur": "anxman",
-      "bob": "bobarchibald",
-      "chris": "chrismagovern",
-      "cihan": "cihanozcelik",
-      "eric": "WHiT3R4bBiT",
-      "ian": "statico",
-      "jia": "jia83",
-      "jono": "jspiro",
-      "mark": "mlogan",
-      "manoj": "manojkoushik",
-      "micah": "micahcatlin",
-      "sean": "striderdoom",
-      "steve": "stevearc",
-      "steven": "stevearc",
-      "stevearc": "stevearc",
-      "thibaut": "bkcore",
-      "tibo": "bkcore"
-  }
+  ]
 }
