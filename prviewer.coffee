@@ -195,9 +195,7 @@ ensureAuthenticated = (req, res, next) ->
     res.redirect "https://#{req.headers["host"]}#{req.url}"
     return
 
-  if req.param('token') == requireEnv 'DASHBOARD_TOKEN'
-    return next()
-  else if req.isAuthenticated()
+  if req.isAuthenticated()
     return next()
   else
     res.redirect '/auth/github'
