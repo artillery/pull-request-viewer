@@ -6,11 +6,13 @@ This application provides an alternative interface to viewing pull requests on G
 
 ## Notable features
 
-* Uses GitHub for authentication
+* Uses GitHub for authentication & authorization
 * Highlights PRs involving you
 * Parses the last comment of a PR to set a status label
 * If PR titles begin with reviewer usernames `foo:` or `foo/bar/baz:`, those GitHub usernames will become the reviewers. (See also GITHUB_USERNAME_ALIASES below.)
 * If PR titles begin with `everyone` or `all`, all reviewers will be added
+* PR titles beginning with `WIP` are considered Works In Progress and are greyed out
+* PRs older than a month are hidden
 * Lists everyone involved in commenting in a PR
 * Shows and sorts by last update time
 * Shows the source branch name
