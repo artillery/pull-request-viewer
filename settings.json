@@ -1,8 +1,8 @@
 {
   "buildStatuses": [
-    { "title": "Success", "class": "success", "regex": "success" },
-    { "title": "Pending", "class": "warning", "regex": "pending" },
-    { "title": "Failed", "class": "important", "regex": "fail" }
+    { "title": "Success", "class": "text-success", "regex": "success" },
+    { "title": "Pending", "class": "text-warning", "regex": "pending" },
+    { "title": "Failed", "class": "text-error", "regex": "error|fail" }
   ],
   "reviewStatuses": [
     { "title": "GLHF+Comments", "class": "success", "regex": "((comment[sz]|nits).*GLHF)|(GLHF.*(comment[sz]|nits))" },

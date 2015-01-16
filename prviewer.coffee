@@ -252,10 +252,12 @@ app.get '/', ensureAuthenticated, (req, res) ->
           if new RegExp(config.regex, 'i').test status.state
             pull.buildStatusClass = config.class
             pull.buildStatus = config.title
+            pull.buildStatusUrl = status.target_url
             break
       if not pull.buildStatus
-        pull.buildStatusClass = 'ignore'
+        pull.buildStatusClass = 'muted'
         pull.buildStatus = 'n/a'
+        pull.buildStatusUrl = null
 
       # Get rate limit remaining.
       for result in results
