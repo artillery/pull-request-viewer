@@ -455,13 +455,13 @@ app.get '/', ensureAuthenticated, (req, res) ->
       </html>
     """
 
-  fetchAllPulls()
+  Promise.resolve()
+    .then(fetchAllPulls)
     .then(annotatePulls)
     .then(hideOldPulls)
     .then(sortPulls)
     .then(renderDashboard)
-    .then(null, renderError)
-    .done()
+    .catch(renderError)
 
 # -------------------------------------------------------------------------
 # SERVER STARTUP
