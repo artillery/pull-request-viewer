@@ -90,9 +90,9 @@ html(lang='en')
               tr(class="pullrequest "+pull.class)
                 td
                   div: a(href=pull.html_url) ##{ pull.number }
-                  div.repo= pull.head.repo.name
+                  div: small: a(href=pull.head.repo.html_url).muted.hover-only= pull.head.repo.name
                 td
-                  = pull.displayTitle
+                  a(href=pull.html_url).hover-only= pull.displayTitle
                   | &nbsp;
                   for tag in pull.tags
                     span.label.label-default= tag.toLowerCase()
@@ -122,7 +122,7 @@ html(lang='en')
                       default
                         | &#9679;
                 td.nowrap
-                  = pull.last_update_string
+                  a(href=pull.html_url).hover-only= pull.last_update_string
                 td.last_update
                   if pull.last_comment && pull.last_user
                     - var u = pull.last_user
@@ -135,8 +135,8 @@ html(lang='en')
         div.muted
           | Showing open pull requests from:
           for repo in settings.github.repos
-            a.muted(href="https://github.com/"+repo.user+"/"+repo.repo)
-              | &nbsp;
+            | &nbsp;
+            a(href="https://github.com/"+repo.user+"/"+repo.repo).hover-only.muted
               | #{ repo.user }/#{ repo.repo }
           br
           | Approximate GitHub API calls remaining: #{ rateLimitRemaining }

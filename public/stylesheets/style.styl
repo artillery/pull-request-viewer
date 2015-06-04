@@ -34,9 +34,16 @@ td.last_update
     font-size: smaller
     margin: 2px 2px 0
 
-div.repo
-  color: #999
-  font-size: x-small
+a.hover-only
+  &:link, &:visited
+    text-decoration: none
+    color: #333
+  &:hover, &:active
+    text-decoration: underline
+    color: #058
+a.hover-only.muted
+  &:link, &:visited
+    color: #999 !important
 
 div.branch
   color: #999
