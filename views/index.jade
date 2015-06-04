@@ -89,7 +89,8 @@ html(lang='en')
             for pull in pulls
               tr(class="pullrequest "+pull.class)
                 td
-                  a(href=pull.html_url) ##{ pull.number }
+                  div: a(href=pull.html_url) ##{ pull.number }
+                  div.repo= pull.head.repo.name
                 td
                   = pull.displayTitle
                   | &nbsp;
