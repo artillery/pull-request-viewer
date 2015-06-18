@@ -13,6 +13,7 @@
     { "title": "Blocked", "class": "important", "regex": "blocked|waiting" },
     { "title": "Fixing", "class": "default", "regex": "will fix|fixing" },
     { "title": "Ping!", "class": "warning", "regex": "p[oi]ng|HA+Y" },
-    { "title": "Derp!", "class": "info", "regex": "derp" }
+    { "title": "Derp!", "class": "info", "regex": "derp" },
+    { "title": "Re-test", "class": "default", "regex": "retest" }
   ]
 }
