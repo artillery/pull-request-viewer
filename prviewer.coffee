@@ -8,15 +8,14 @@
 # Inspired strongly by
 # https://github.com/jaredhanson/passport-github/blob/master/examples/login/app.js
 
-GitHubAPI = require 'github'
 GitHubStrategy = require('passport-github').Strategy
 Promise = require 'promise'
 express = require 'express'
 fs = require 'fs'
+ghrequest = require 'ghrequest'
 http = require 'http'
 humanize = require 'humanize-plus'
 md5 = require 'md5'
-memoize = require 'memoizee'
 moment = require 'moment'
 optimist = require 'optimist'
 passport = require 'passport'
@@ -109,41 +108,40 @@ passport.deserializeUser (user, done) -> done null, user
 
 CACHE_MS = 1 * 60 * 1000
 
-getGitHubHelper = (token) ->
-  github = new GitHubAPI(version: '3.0.0', debug: process.env.DEBUG)
-  github.authenticate type: 'oauth', token: token
-  return github
-getGitHubHelper = memoize getGitHubHelper # Cache forever.
+callAPI = (token, url, params = {}) ->
+  return new Promise((resolve, reject) ->
+    ghrequest {
+      url: url
+      qs: params
+      headers:
+        'Authorization': "token #{ token }"
+        'User-Agent': 'github.com/artillery/pull-request-viewer'
+    }, (err, res, body) ->
+      if err
+        reject err
+      else
+        body.meta ?= {}
+        body.meta['x-ratelimit-remaining'] = res.headers['x-ratelimit-remaining']
+        resolve body
+  )
 
-getAllPullRequests = (token, user, repo, cb) ->
-  github = getGitHubHelper token
-  return Promise.denodeify(github.pullRequests.getAll)({ user: user, repo: repo })
-getAllPullRequests = memoize getAllPullRequests, maxAge: CACHE_MS
+getAllPullRequests = (token, user, repo) ->
+  return callAPI token, "/repos/#{ user }/#{ repo }/pulls"
 
-getBuildStatuses = (token, user, repo, sha, cb) ->
-  github = getGitHubHelper token
-  return Promise.denodeify(github.statuses.get)({ user: user, repo: repo, sha: sha })
-getBuildStatuses = memoize getBuildStatuses, maxAge: CACHE_MS
+getBuildStatuses = (token, user, repo, sha) ->
+  return callAPI token, "/repos/#{ user }/#{ repo }/commits/#{ sha }/status"
 
-getCommit = (token, user, repo, sha, cb) ->
-  github = getGitHubHelper token
-  return Promise.denodeify(github.gitdata.getCommit)({ user: user, repo: repo, sha: sha })
-getCommit = memoize getCommit, maxAge: CACHE_MS
+getCommit = (token, user, repo, sha) ->
+  return callAPI token, "/repos/#{ user }/#{ repo }/git/commits/#{ sha }"
 
-getPullComments = (token, user, repo, number, cb) ->
-  github = getGitHubHelper token
-  return Promise.denodeify(github.pullRequests.getComments)({ user: user, repo: repo, number: number })
-getPullComments = memoize getPullComments, maxAge: CACHE_MS
+getPullComments = (token, user, repo, number) ->
+  return callAPI token, "/repos/#{ user }/#{ repo }/pulls/#{ number }/comments"
 
-getIssueComments = (token, user, repo, number, cb) ->
-  github = getGitHubHelper token
-  return Promise.denodeify(github.issues.getComments)({ user: user, repo: repo, number: number })
-getIssueComments = memoize getIssueComments, maxAge: CACHE_MS
+getIssueComments = (token, user, repo, number) ->
+  return callAPI token, "/repos/#{ user }/#{ repo }/issues/#{ number }/comments"
 
-getFrom = (token, username, cb) ->
-  github = getGitHubHelper token
-  return Promise.denodeify(github.user.getFrom)({ user: username })
-getFrom = memoize getFrom # Cache forever.
+getFrom = (token, user) ->
+  return callAPI token, "/users/#{ user }"
 
 # -------------------------------------------------------------------------
 # EXPRESS INITIALIZATION
