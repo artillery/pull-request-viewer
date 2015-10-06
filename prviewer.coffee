@@ -64,7 +64,9 @@ settings.github = {
 
 for spec in requireEnv('GITHUB_REPOS').split ','
   [user, repo] = spec.split '/'
+  console.assert user and repo, "Bad user/repo: '#{ spec }'"
   settings.github.repos.push { user: user, repo: repo }
+console.log "Repositories:", JSON.stringify(settings.github.repos, null, '  ')
 
 settings.github.forcedReviewers = do ->
   obj = {}
