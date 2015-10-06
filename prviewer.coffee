@@ -391,7 +391,7 @@ app.get '/', ensureAuthenticated, (req, res) ->
 
   # Hide old pulls that nobody wants to close.
   hideOldPulls = (pulls) ->
-    lastMonth = moment().subtract('month', 1)
+    lastMonth = moment().subtract(1, 'month')
     pulls = (p for p in pulls when p.last_update.isAfter lastMonth)
     return Promise.resolve pulls
 
